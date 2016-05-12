@@ -16,9 +16,6 @@ class monetary {
 
 		this.settings.setup();
 
-		// Run other inits from here?
-		// test
-
 		return this;
 	}
 

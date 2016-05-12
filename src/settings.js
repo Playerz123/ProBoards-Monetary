@@ -5,7 +5,9 @@ monetary.settings = class {
 
 			thread: 50,
 			poll: 10,
-			post: 25
+			post: 25,
+			birthday: 200,
+			new_user: 200
 
 		};
 	}
@@ -21,7 +23,13 @@ monetary.settings = class {
 			if(plugin.settings){
 				let settings = plugin.settings;
 
-				// Do settings setup here
+				this._currency_name = settings.currency_name;
+				this._currency_symbol = settings.currency_symbol;
+				this._currency_symbol_image = settings.currency_symbol_image;
+				this._currency_separator = settings.currency_separator;
+				this._object_currency = !! settings.object_based_currency;
+				this._currency_separator_space = !! settings.currency_separator_space;
+				this._currency_delimiter = settings.currency_delimiter;
 			}
 
 			if(plugin.images){
@@ -48,6 +56,34 @@ monetary.settings = class {
 
 	static get post_amount(){
 		return this._amounts.post;
+	}
+
+	static get currency_name(){
+		return this._currency_name;
+	}
+
+	static get currency_symbol(){
+		return this._currency_symbol;
+	}
+
+	static get currency_separator(){
+		return this._currency_separator;
+	}
+
+	static get object_currency(){
+		return this._object_currency;
+	}
+
+	static get currency_separator_space(){
+		return this._currency_separator_space;
+	}
+
+	static get currency_symbol_image(){
+		return this._currency_symbol_image;
+	}
+
+	static get currency_delimiter(){
+		return this._currency_delimiter;
 	}
 
 };
