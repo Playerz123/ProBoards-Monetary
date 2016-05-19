@@ -16,6 +16,10 @@ class monetary {
 
 		this.settings.setup();
 
+		if(this.settings.profile_show_money && yootil.location.profile_home() && yootil.page.member.exists()){
+			this.profile.init();
+		}
+
 		return this;
 	}
 

@@ -23,6 +23,8 @@ monetary.settings = class {
 			if(plugin.settings){
 				let settings = plugin.settings;
 
+				// Currency settings
+
 				this._currency_name = settings.currency_name;
 				this._currency_symbol = settings.currency_symbol;
 				this._currency_symbol_image = settings.currency_symbol_image;
@@ -30,6 +32,11 @@ monetary.settings = class {
 				this._object_currency = !! settings.object_based_currency;
 				this._currency_separator_space = !! settings.currency_separator_space;
 				this._currency_delimiter = settings.currency_delimiter;
+
+				// Profile settings
+
+				this._profile_show_money = !! settings.profile_show_money;
+				this._profile_new_content_box = !! settings.profile_new_cbox;
 			}
 
 			if(plugin.images){
@@ -84,6 +91,14 @@ monetary.settings = class {
 
 	static get currency_delimiter(){
 		return this._currency_delimiter;
+	}
+
+	static get profile_show_money(){
+		return this._profile_show_money;
+	}
+
+	static get profile_new_content_box(){
+		return this._profile_new_content_box;
 	}
 
 };
