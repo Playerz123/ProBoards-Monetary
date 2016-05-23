@@ -13,8 +13,10 @@ class monetary {
 		this._VERSION = "{VER}";
 		this._CALLED = yootil.ts();
 		this._PLUGIN = {};
+		this._DATA = new Map();
 
 		this.settings.setup();
+		this.setup_data();
 
 		if(this.settings.profile_show_money && yootil.location.profile_home() && yootil.page.member.exists()){
 			this.profile.init();
@@ -60,6 +62,20 @@ class monetary {
 
 	static get PLUGIN(){
 		return this._PLUGIN;
+	}
+
+	static setup_data(){
+		let user_data = proboards.plugin.keys.data[this._KEY];
+
+		for(let [key, value] of Object.entries(user_data)){
+			if(!this._DATA.has(key)){
+				this._DATA.set(key, new monetary.user_data(key, value));
+			}
+		}
+	}
+
+	static data(user_id = 0){
+		return monetary.api.data(user_id);
 	}
 
 }

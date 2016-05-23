@@ -35,8 +35,8 @@ monetary.settings = class {
 
 				// Profile settings
 
-				this._profile_show_money = !! settings.profile_show_money;
-				this._profile_new_content_box = !! settings.profile_new_cbox;
+				this._profile_show_money = !! ~~ settings.profile_show_money;
+				this._profile_new_content_box = !! ~~ settings.profile_new_cbox;
 			}
 
 			if(plugin.images){
