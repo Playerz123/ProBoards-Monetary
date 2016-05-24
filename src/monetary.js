@@ -15,6 +15,8 @@ class monetary {
 			PLUGIN_VERSION: "{VER}",
 			PLUGIN_CALLED: yootil.ts(),
 
+			YOOTIL_MIN_REQUIRED_VERSION: "2.0.0",
+
 			DATA_KEYS: {
 
 				MONEY: "m"
@@ -25,7 +27,12 @@ class monetary {
 
 		Object.freeze(this.ENUMS);
 
+		if(!this.correct_yootil_version()){
+			return;
+		}
+
 		this._DATA = new Map();
+		this.events = {};
 
 		this.settings.setup();
 		this.setup_data();
@@ -35,6 +42,20 @@ class monetary {
 		}
 
 		return this;
+	}
+
+	static correct_yootil_version(){
+		if(typeof yootil == "undefined"){
+			console.error("Yootil is required for the Monetary plugin, but was not found.");
+
+			return false;
+		} else if(yootil.compare_version(yootil.version, this.ENUMS.YOOTIL_MIN_REQUIRED_VERSION) == -1){
+			console.error("Monetary plugin requires a mininum Yootil version of " + this.ENUMS.YOOTIL_MIN_REQUIRED_VERSION + ".");
+
+			return false;
+		}
+
+		return true;
 	}
 
 	/**
