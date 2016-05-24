@@ -16,4 +16,14 @@ monetary.user_data = class {
 		return null;
 	}
 
+	set(key = "", value){
+		if(this._DATA.hasOwnProperty(key)){
+			this._DATA[key] = value;
+
+			return true;
+		}
+
+		return false;
+	}
+
 };

@@ -38,37 +38,53 @@ monetary.api = class {
 		};
 	}
 
-	set(){
-		let self = this;
+	static set(user_id = 0){
+		let data = this.data(user_id);
+
+		if(!data){
+			return null;
+		}
 
 		return {
 
 			money(amount = 0){
-				self._data.m = parseFloat(amount);
+				return data.set(monetary.ENUMS.DATA_KEYS.MONEY, parseFloat(amount));
 			}
 
 		};
 	}
 
-	increase(){
-		let self = this;
+	static increase(user_id = 0){
+		let data = this.data(user_id);
+
+		if(!data){
+			return null;
+		}
 
 		return {
 
 			money(amount = 0){
-				self._data.m += parseFloat(amount);
+				let current_money = data.get(monetary.ENUMS.DATA_KEYS.MONEY) || 0;
+
+				return data.set(monetary.ENUMS.DATA_KEYS.MONEY, current_money + parseFloat(amount));
 			}
 
 		};
 	}
 
-	decrease(){
-		let self = this;
+	static decrease(user_id = 0){
+		let data = this.data(user_id);
+
+		if(!data){
+			return null;
+		}
 
 		return {
 
 			money(amount = 0){
-				self._data.m -= parseFloat(amount);
+				let current_money = data.get(monetary.ENUMS.DATA_KEYS.MONEY) || 0;
+
+				return data.set(monetary.ENUMS.DATA_KEYS.MONEY, current_money - parseFloat(amount));
 			}
 
 		};
