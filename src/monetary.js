@@ -8,11 +8,23 @@
 class monetary {
 
 	static init(){
-		this._PLUGIN_ID = "pixeldepth_monetary";
-		this._KEY = "pixeldepth_money";
-		this._VERSION = "{VER}";
-		this._CALLED = yootil.ts();
-		this._PLUGIN = {};
+		this.ENUMS = {
+
+			PLUGIN_ID: "pixeldepth_monetary",
+			PLUGIN_KEY: "pixeldepth_money",
+			PLUGIN_VERSION: "{VER}",
+			PLUGIN_CALLED: yootil.ts(),
+
+			DATA_KEYS: {
+
+				MONEY: "m"
+
+			}
+
+		};
+
+		Object.freeze(this.ENUMS);
+
 		this._DATA = new Map();
 
 		this.settings.setup();
@@ -31,7 +43,7 @@ class monetary {
 	 */
 
 	static get PLUGIN_ID(){
-		return this._PLUGIN_ID;
+		return this.ENUMS.PLUGIN_ID;
 	}
 
 	/**
@@ -40,7 +52,7 @@ class monetary {
 	 */
 
 	static get KEY(){
-		return this._KEY;
+		return this.ENUMS.PLUGIN_KEY;
 	}
 
 	/**
@@ -49,11 +61,11 @@ class monetary {
 	 */
 
 	static get version(){
-		return this._VERSION;
+		return this.ENUMS.PLUGIN_VERSION;
 	}
 
 	static get CALLED(){
-		return this._CALLED;
+		return this.ENUMS.PLUGIN_CALLED;
 	}
 
 	static set PLUGIN(plug){
@@ -65,7 +77,7 @@ class monetary {
 	}
 
 	static setup_data(){
-		let user_data = proboards.plugin.keys.data[this._KEY];
+		let user_data = proboards.plugin.keys.data[this.ENUMS.PLUGIN_KEY];
 
 		for(let [key, value] of Object.entries(user_data)){
 			if(!this._DATA.has(key)){

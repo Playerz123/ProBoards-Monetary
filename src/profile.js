@@ -16,10 +16,7 @@ monetary.profile = class {
 	}
 
 	static ready(){
-
-		// Fetch real value from data class later.
-
-		let profile_money = 5000000;
+		let profile_money = monetary.api.get(yootil.page.member.id()).money();
 
 		if(monetary.settings.profile_new_content_box){
 			this.create_new_content_box(profile_money);

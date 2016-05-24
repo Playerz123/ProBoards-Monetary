@@ -1,22 +1,19 @@
 monetary.user_data = class {
 
-	constructor(user_id = 0){
+	constructor(user_id = 0, data = {}){
+		this._DATA = {
 
-		this._data = {
-
-			m: 0
+			[monetary.ENUMS.DATA_KEYS.MONEY]: data[monetary.ENUMS.DATA_KEYS.MONEY] || 0
 
 		};
 	}
 
-	money(format = false, include_symbol = true){
-		let amount = this._data.m;
-
-		if(format){
-			amount = monetary.utils.money_str(amount, true, include_symbol)
+	get(key = ""){
+		if(this._DATA.hasOwnProperty(key)){
+			return this._DATA[key];
 		}
 
-		return amount;
+		return null;
 	}
 
 };
