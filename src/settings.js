@@ -37,10 +37,14 @@ monetary.settings = class {
 
 				this._profile_show_money = !! ~~ settings.profile_show_money;
 				this._profile_new_content_box = !! ~~ settings.profile_new_cbox;
+
+				// Permissions
+
+				this._members_who_can_edit = settings.members_who_can_edit;
 			}
 
 			if(plugin.images){
-				this._images = images;
+				this._images = plugin.images;
 			}
 		}
 	}
@@ -99,6 +103,10 @@ monetary.settings = class {
 
 	static get profile_new_content_box(){
 		return this._profile_new_content_box;
+	}
+
+	static get members_who_can_edit(){
+		return this._members_who_can_edit;
 	}
 
 };

@@ -1,3 +1,7 @@
+/**
+ * @TODO Look at object based currency setting and implement it.
+ */
+
 monetary.utils = class {
 
 	static full_money_str(money = 0, tpl = "{CURRENCY_NAME}{CURRENCY_SEPARATOR}{CURRENCY_SEPARATOR_SPACE}{CURRENCY_SYMBOL}{MONEY}"){

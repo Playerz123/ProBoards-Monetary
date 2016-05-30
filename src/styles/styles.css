@@ -1,5 +1,12 @@
-.monetary-profile-money {
+.monetary-profile-money-custom {
 
 	display: none;
+
+}
+
+.monetary-edit-icon {
+
+	margin-left: 3px;
+	cursor: pointer;
 
 }
