@@ -15,7 +15,7 @@ monetary.settings = class {
 	static setup(){
 		this.init();
 
-		let plugin = pb.plugin.get(monetary.ENUMS.PLUGIN_ID);
+		let plugin = pb.plugin.get(monetary.enums.PLUGIN_ID);
 
 		if(plugin){
 			monetary.PLUGIN = plugin;

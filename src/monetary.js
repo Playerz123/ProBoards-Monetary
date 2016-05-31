@@ -8,7 +8,7 @@
 class monetary {
 
 	static init(){
-		this.ENUMS = {
+		this.enums = {
 
 			PLUGIN_ID: "pixeldepth_monetary",
 			PLUGIN_KEY: "pixeldepth_money",
@@ -25,7 +25,7 @@ class monetary {
 
 		};
 
-		Object.freeze(this.ENUMS);
+		Object.freeze(this.enums);
 
 		if(!this.correct_yootil_version()){
 			return;
@@ -49,8 +49,8 @@ class monetary {
 			console.error("Yootil is required for the Monetary plugin, but was not found.");
 
 			return false;
-		} else if(yootil.compare_version(yootil.version, this.ENUMS.YOOTIL_MIN_REQUIRED_VERSION) == -1){
-			console.error("Monetary plugin requires a mininum Yootil version of " + this.ENUMS.YOOTIL_MIN_REQUIRED_VERSION + ".");
+		} else if(yootil.compare_version(yootil.version, this.enums.YOOTIL_MIN_REQUIRED_VERSION) == -1){
+			console.error("Monetary plugin requires a mininum Yootil version of " + this.enums.YOOTIL_MIN_REQUIRED_VERSION + ".");
 
 			return false;
 		}
@@ -64,7 +64,7 @@ class monetary {
 	 */
 
 	static get PLUGIN_ID(){
-		return this.ENUMS.PLUGIN_ID;
+		return this.enums.PLUGIN_ID;
 	}
 
 	/**
@@ -73,7 +73,7 @@ class monetary {
 	 */
 
 	static get KEY(){
-		return this.ENUMS.PLUGIN_KEY;
+		return this.enums.PLUGIN_KEY;
 	}
 
 	/**
@@ -82,11 +82,11 @@ class monetary {
 	 */
 
 	static get version(){
-		return this.ENUMS.PLUGIN_VERSION;
+		return this.enums.PLUGIN_VERSION;
 	}
 
 	static get CALLED(){
-		return this.ENUMS.PLUGIN_CALLED;
+		return this.enums.PLUGIN_CALLED;
 	}
 
 	static set PLUGIN(plug){
@@ -98,11 +98,13 @@ class monetary {
 	}
 
 	static setup_data(){
-		let user_data = proboards.plugin.keys.data[this.ENUMS.PLUGIN_KEY];
+		let user_data = proboards.plugin.keys.data[this.enums.PLUGIN_KEY];
 
 		for(let [key, value] of Object.entries(user_data)){
-			if(!this._DATA.has(key)){
-				this._DATA.set(key, new monetary.user_data(key, value));
+			let id = ~~ key;
+
+			if(!this._DATA.has(id)){
+				this._DATA.set(id, new monetary.user_data(id, value));
 			}
 		}
 	}

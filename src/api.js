@@ -26,7 +26,7 @@ monetary.api = class {
 		return {
 
 			money(format = false, include_symbol = false){
-				let amount = data.get(monetary.ENUMS.DATA_KEYS.MONEY);
+				let amount = parseFloat(data.get(monetary.enums.DATA_KEYS.MONEY));
 
 				if(format){
 					amount = monetary.utils.money_str(amount, true, include_symbol)
@@ -48,7 +48,7 @@ monetary.api = class {
 		return {
 
 			money(amount = 0){
-				return data.set(monetary.ENUMS.DATA_KEYS.MONEY, parseFloat(amount));
+				return data.set(monetary.enums.DATA_KEYS.MONEY, parseFloat(amount));
 			}
 
 		};
@@ -64,9 +64,9 @@ monetary.api = class {
 		return {
 
 			money(amount = 0){
-				let current_money = data.get(monetary.ENUMS.DATA_KEYS.MONEY) || 0;
+				let current_money = data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
 
-				return data.set(monetary.ENUMS.DATA_KEYS.MONEY, current_money + parseFloat(amount));
+				return data.set(monetary.enums.DATA_KEYS.MONEY, current_money + parseFloat(amount));
 			}
 
 		};
@@ -82,22 +82,28 @@ monetary.api = class {
 		return {
 
 			money(amount = 0){
-				let current_money = data.get(monetary.ENUMS.DATA_KEYS.MONEY) || 0;
+				let current_money = data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
 
-				return data.set(monetary.ENUMS.DATA_KEYS.MONEY, current_money - parseFloat(amount));
+				return data.set(monetary.enums.DATA_KEYS.MONEY, current_money - parseFloat(amount));
 			}
 
 		};
 	}
 	
-	static save(user_id = 0, ){
-		let data = this.data(user_id);
+	static save(user_id = 0){
+		let p = new Promise((resolve, reject) => {
+			let data = this.data(user_id);
 
-		if(data){
-			
-		}
+			if(data){
+				data.save().then(status => resolve(status)).catch(status => reject(status));
+			} else {
+				reject({
+					message: "No data"
+				});
+			}
+		});
 		
-		return false;
+		return p;
 	}
 
 };

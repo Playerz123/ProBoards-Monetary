@@ -1,11 +1,16 @@
 monetary.user_data = class {
 
 	constructor(user_id = 0, data = {}){
+		this._id = user_id;
 		this._DATA = {
 
-			[monetary.ENUMS.DATA_KEYS.MONEY]: data[monetary.ENUMS.DATA_KEYS.MONEY] || 0
+			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0
 
 		};
+	}
+
+	save(){
+		return yootil.key.set(monetary.enums.PLUGIN_KEY, this._DATA, this._id);
 	}
 
 	get(key = ""){

@@ -14,6 +14,7 @@ monetary.profile = class {
 	static init(){
 		this.using_custom = false;
 		this.using_content_box = false;
+		this.template = null;
 
 		$(this.ready.bind(this));
 	}
@@ -38,16 +39,15 @@ monetary.profile = class {
 
 			if($custom.length){
 				this.using_custom = true;
+				this.template = $custom.text();
 
-				let tpl = $custom.text();
-
-				$custom.html(monetary.utils.full_money_str(profile_money, tpl)).show();
+				$custom.html("<span data-monetary-money>" + monetary.utils.full_money_str(profile_money, this.template) + "</span>").show();
 			} else {
 				let $last_head = $("td.headings:last");
 
 				if($last_head.length){
 					let $row = $last_head.parent();
-					let $money_td = $("<td class='monetary-profile-money'>" + monetary.utils.money_str(profile_money, true) + "</td>");
+					let $money_td = $("<td class='monetary-profile-money'><span data-monetary-money>" + monetary.utils.money_str(profile_money, true) + "</span></td>");
 					let currency_name = monetary.settings.currency_name + monetary.settings.currency_separator;
 
 					$("<tr/>").html("<td>" + currency_name + "</td>").append($money_td).insertAfter($row);
@@ -58,7 +58,7 @@ monetary.profile = class {
 
 	static create_new_content_box(profile_money = 0){
 		let $content_box = yootil.create.profile_content_box("monetary-profile-content-box");
-		let $span = $("<span class='monetary-profile-money'>" + monetary.utils.full_money_str(profile_money) + "</span>");
+		let $span = $("<span class='monetary-profile-money'><span data-monetary-money>" + monetary.utils.full_money_str(profile_money) + "</span></span>");
 
 		$content_box.append($span);
 		$content_box.prependTo("#center-column");
@@ -117,16 +117,19 @@ monetary.profile = class {
 		dialog_html += "</p>";
 
 		dialog_html += "<p style='margin-top: 10px;'>";
-			dialog_html += monetary.settings.currency_symbol + ": <input type='text' style='width: 100px' name='monetary-edit-specific-money' value='0' /> ";
-			dialog_html += "<button id='monetary-add-specific-money'>Add</button> ";
-			dialog_html += "<button id='monetary-remove-specific-money'>Remove</button>";
+			dialog_html += monetary.settings.currency_symbol + ": <input type='text' style='width: 100px' name='monetary-edit-adjust-money' value='0' /> ";
+			dialog_html += "<button id='monetary-add-money'>Add</button> ";
+			dialog_html += "<button id='monetary-remove-money'>Remove</button>";
 		dialog_html += "</p>";
 
 		let $dialog_html = $("<span />").html(dialog_html);
 
 		$dialog_html.find("button#monetary-set-money").on("click", () => this.set_money(profile_id, $money_elem));
+		$dialog_html.find("button#monetary-reset-money").on("click", () => this.reset_money(profile_id, $money_elem));
+		$dialog_html.find("button#monetary-add-money").on("click", () => this.add_remove_money(profile_id, $money_elem));
+		$dialog_html.find("button#monetary-remove-money").on("click", () => this.add_remove_money(profile_id, $money_elem, true));
 
-		pb.window.dialog("monetary-edit-money-dialog", {
+		let $dialog = pb.window.dialog("monetary-edit-money-dialog", {
 
 			title: "Edit " + monetary.settings.currency_name,
 			modal: true,
@@ -144,7 +147,7 @@ monetary.profile = class {
 
 			buttons: {
 
-				Close: function(){
+				"Close": function(){
 					$(this).dialog("close");
 				}
 
@@ -156,13 +159,58 @@ monetary.profile = class {
 	static set_money(profile_id = 0, $money_elem = null){
 		let $field = $("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]");
 		let value = parseFloat($field.val());
-		let money = parseFloat(monetary.api.get(profile_id).money());
+		let current_money = monetary.api.get(profile_id).money();
 
-		if(value != money){
-			console.log(value);
+		if(value != current_money){
 			monetary.api.set(profile_id).money(value);
-			monetary.api.save(profile_id);
+			this.save_and_update(profile_id, $money_elem);
 		}
+	}
+
+	static reset_money(profile_id = 0, $money_elem = null){
+		let current_money = monetary.api.get(profile_id).money();
+
+		if(current_money != 0){
+			$("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]").val(0);
+			monetary.api.set(profile_id).money(0);
+			this.save_and_update(profile_id, $money_elem);
+		}
+	}
+
+	static add_remove_money(profile_id = 0, $money_elem = null, remove = false){
+		let $field = $("#monetary-edit-money-dialog").find("input[name=monetary-edit-adjust-money]");
+		let value = parseFloat($field.val());
+		let current_money = monetary.api.get(profile_id).money();
+		let new_value = (remove)? (current_money - value) : (current_money + value);
+
+		if(current_money != new_value){
+			if(remove){
+				monetary.api.decrease(profile_id).money(value);
+			} else {
+				monetary.api.increase(profile_id).money(value);
+			}
+
+			this.save_and_update(profile_id, $money_elem);
+		}
+	}
+
+	static save_and_update(profile_id = 0, $money_elem = null){
+		monetary.api.save(profile_id).then(status => {
+			let money = monetary.api.get(profile_id).money();
+			let money_str = "";
+
+			if(this.using_content_box){
+				money_str = monetary.utils.full_money_str(money);
+			} else if(this.using_custom){
+				money_str = monetary.utils.full_money_str(money, this.template);
+			} else {
+				money_str = monetary.utils.money_str(money, true);
+			}
+
+			$money_elem.find("span[data-monetary-money]").html(money_str);
+		}).catch(status => {
+			pb.window.alert("Monetary Error", "Could not edit money (ID#" + profile_id + ").<br /><br />" + yootil.html_encode(status.message));
+		});
 	}
 
 };
