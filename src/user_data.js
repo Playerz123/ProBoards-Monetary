@@ -16,6 +16,8 @@ monetary.user_data = class {
 	get(key = ""){
 		if(this._DATA.hasOwnProperty(key)){
 			return this._DATA[key];
+		} else if(key == "data"){
+			return this._DATA;
 		}
 
 		return null;
@@ -26,6 +28,8 @@ monetary.user_data = class {
 			this._DATA[key] = value;
 
 			return true;
+		} else if(key == "data"){
+			this._DATA = value;
 		}
 
 		return false;

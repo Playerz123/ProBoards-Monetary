@@ -208,6 +208,8 @@ monetary.profile = class {
 			}
 
 			$money_elem.find("span[data-monetary-money]").html(money_str);
+			
+			//monetary.api.sync.update()
 		}).catch(status => {
 			pb.window.alert("Monetary Error", "Could not edit money (ID#" + profile_id + ").<br /><br />" + yootil.html_encode(status.message));
 		});

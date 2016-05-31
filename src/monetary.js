@@ -12,6 +12,7 @@ class monetary {
 
 			PLUGIN_ID: "pixeldepth_monetary",
 			PLUGIN_KEY: "pixeldepth_money",
+			SYNC_KEY: "monetary",
 			PLUGIN_VERSION: "{VER}",
 			PLUGIN_CALLED: yootil.ts(),
 
@@ -32,10 +33,15 @@ class monetary {
 		}
 
 		this._DATA = new Map();
-		this.events = {};
 
 		this.settings.setup();
 		this.setup_data();
+		this.api.sync = new yootil.sync(
+			this.enums.SYNC_KEY,
+			this.api.get(yootil.user.id()).data(),
+			obj => console.log(obj),
+			obj => console.log("No change")
+		);
 
 		if(this.settings.profile_show_money && yootil.location.profile_home() && yootil.page.member.exists()){
 			this.profile.init();

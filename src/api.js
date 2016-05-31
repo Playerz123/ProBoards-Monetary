@@ -33,6 +33,10 @@ monetary.api = class {
 				}
 
 				return amount;
+			},
+			
+			data(){
+				return data.get("data");
 			}
 
 		};
