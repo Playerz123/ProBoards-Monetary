@@ -89,5 +89,15 @@ monetary.api = class {
 
 		};
 	}
+	
+	static save(user_id = 0, ){
+		let data = this.data(user_id);
+
+		if(data){
+			
+		}
+		
+		return false;
+	}
 
 };

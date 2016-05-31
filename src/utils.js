@@ -18,10 +18,11 @@ monetary.utils = class {
 	}
 
 	static money_str(money = 0, format = true, include_symbol = true){
-		let str = money.toString();
+		let money_amount = this.money_format(money);
+		let str = money_amount.toString();
 
 		if(format){
-			str = yootil.number_format(money, monetary.settings.currency_delimiter);
+			str = yootil.number_format(money_amount, monetary.settings.currency_delimiter);
 		}
 
 		if(include_symbol){
@@ -31,6 +32,16 @@ monetary.utils = class {
 		}
 
 		return str;
+	}
+
+	static money_format(money = 0, force_decimal = false){
+		let money_num = + (parseFloat(money).toFixed(2));
+
+		if(monetary.settings.object_currency && !force_decimal){
+			money_num = Math.trunc(money_num);
+		}
+
+		return money_num;
 	}
 
 };

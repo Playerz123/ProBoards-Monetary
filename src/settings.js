@@ -29,8 +29,8 @@ monetary.settings = class {
 				this._currency_symbol = settings.currency_symbol;
 				this._currency_symbol_image = settings.currency_symbol_image;
 				this._currency_separator = settings.currency_separator;
-				this._object_currency = !! settings.object_based_currency;
-				this._currency_separator_space = !! settings.currency_separator_space;
+				this._object_currency = !! ~~ settings.object_based_currency;
+				this._currency_separator_space = !! ~~ settings.currency_separator_space;
 				this._currency_delimiter = settings.currency_delimiter;
 
 				// Profile settings
