@@ -17,16 +17,16 @@ monetary.api = class {
 	}
 
 	static get(user_id = 0){
-		let data = this.data(user_id);
+		let user_data = this.data(user_id);
 		
-		if(!data){
+		if(!user_data){
 			return null;
 		}
 
 		return {
 
 			money(format = false, include_symbol = false){
-				let amount = parseFloat(data.get(monetary.enums.DATA_KEYS.MONEY));
+				let amount = parseFloat(user_data.get(monetary.enums.DATA_KEYS.MONEY));
 
 				if(format){
 					amount = monetary.utils.money_str(amount, true, include_symbol)
@@ -36,59 +36,63 @@ monetary.api = class {
 			},
 			
 			data(){
-				return data.get("data");
+				return user_data.get("data");
 			}
 
 		};
 	}
 
 	static set(user_id = 0){
-		let data = this.data(user_id);
+		let user_data = this.data(user_id);
 
-		if(!data){
+		if(!user_data){
 			return null;
 		}
 
 		return {
 
 			money(amount = 0){
-				return data.set(monetary.enums.DATA_KEYS.MONEY, parseFloat(amount));
+				return user_data.set(monetary.enums.DATA_KEYS.MONEY, parseFloat(amount));
+			},
+
+			data(value = {}){
+				return user_data.set("data", value);
 			}
 
 		};
 	}
 
 	static increase(user_id = 0){
-		let data = this.data(user_id);
+		let user_data = this.data(user_id);
 
-		if(!data){
+		if(!user_data){
 			return null;
 		}
 
 		return {
 
 			money(amount = 0){
-				let current_money = data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
+				let current_money = user_data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
 
-				return data.set(monetary.enums.DATA_KEYS.MONEY, current_money + parseFloat(amount));
+				return user_data.set(monetary.enums.DATA_KEYS.MONEY, current_money + parseFloat(amount));
 			}
 
 		};
 	}
 
 	static decrease(user_id = 0){
-		let data = this.data(user_id);
+		let user_data = this.data(user_id);
 
-		if(!data){
+		if(!user_data){
 			return null;
 		}
 
 		return {
 
 			money(amount = 0){
-				let current_money = data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
+				let current_money = user_data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
 
-				return data.set(monetary.enums.DATA_KEYS.MONEY, current_money - parseFloat(amount));
+				return user_data.set(monetary.enums.DATA_KEYS.MONEY, current_money - parseFloat(amount));
 			}
 
 		};
@@ -96,10 +100,10 @@ monetary.api = class {
 	
 	static save(user_id = 0){
 		let p = new Promise((resolve, reject) => {
-			let data = this.data(user_id);
+			let user_data = this.data(user_id);
 
-			if(data){
-				data.save().then(status => resolve(status)).catch(status => reject(status));
+			if(user_data){
+				user_data.save().then(status => resolve(status)).catch(status => reject(status));
 			} else {
 				reject({
 					message: "No data"
@@ -108,6 +112,20 @@ monetary.api = class {
 		});
 		
 		return p;
+	}
+
+	static sync(user_id){
+		if(user_id != yootil.user.id()){
+			return;
+		}
+
+		let user_data = this.data(user_id);
+
+		if(!user_data){
+			return null;
+		}
+
+		this._sync.update(user_data.get("data"));
 	}
 
 };

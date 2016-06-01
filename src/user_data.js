@@ -30,6 +30,8 @@ monetary.user_data = class {
 			return true;
 		} else if(key == "data"){
 			this._DATA = value;
+
+			return true;
 		}
 
 		return false;

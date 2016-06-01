@@ -1,7 +1,3 @@
-/**
- * @TODO Look at object based currency setting and implement it.
- */
-
 monetary.utils = class {
 
 	static full_money_str(money = 0, tpl = "{CURRENCY_NAME}{CURRENCY_SEPARATOR}{CURRENCY_SEPARATOR_SPACE}{CURRENCY_SYMBOL}{MONEY}"){
@@ -35,7 +31,7 @@ monetary.utils = class {
 	}
 
 	static money_format(money = 0, force_decimal = false){
-		let money_num = + (parseFloat(money).toFixed(2));
+		let money_num = parseFloat(money).toFixed(2);
 
 		if(monetary.settings.object_currency && !force_decimal){
 			money_num = Math.trunc(money_num);

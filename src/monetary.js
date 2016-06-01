@@ -36,12 +36,7 @@ class monetary {
 
 		this.settings.setup();
 		this.setup_data();
-		this.api.sync = new yootil.sync(
-			this.enums.SYNC_KEY,
-			this.api.get(yootil.user.id()).data(),
-			obj => console.log(obj),
-			obj => console.log("No change")
-		);
+		this.api._sync = new yootil.sync(this.enums.SYNC_KEY, this.api.get(yootil.user.id()).data(), new this.sync_handler());
 
 		if(this.settings.profile_show_money && yootil.location.profile_home() && yootil.page.member.exists()){
 			this.profile.init();

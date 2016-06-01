@@ -3,7 +3,7 @@
  *
  * Custom element:
  *
- * <div class="monetary-profile-money-custom">
+ * <div class="monetary-profile-money">
  *     {CURRENCY_NAME}{CURRENCY_SEPARATOR}{CURRENCY_SEPARATOR_SPACE}{CURRENCY_SYMBOL}{MONEY}
  * </div>
  */
@@ -12,9 +12,11 @@
 monetary.profile = class {
 
 	static init(){
-		this.using_custom = false;
-		this.using_content_box = false;
-		this.template = null;
+		this._initialised = true;
+		this._using_custom = false;
+		this._using_content_box = false;
+		this._template = null;
+		this._money_elem = null;
 
 		$(this.ready.bind(this));
 	}
@@ -27,33 +29,32 @@ monetary.profile = class {
 	static add_money_to_profile(){
 		let profile_money = monetary.api.get(yootil.page.member.id()).money();
 
-		if(monetary.settings.profile_new_content_box){
-			this.using_content_box = true;
+		// Look for custom element, otherwise we in insert
+		// after the date registered.
+
+		let $custom = $(".monetary-profile-money");
+
+		if($custom.length){
+			this._using_custom = true;
+			this._template = $custom.text();
+
+			$custom.html("<span data-monetary-money>" + monetary.utils.full_money_str(profile_money, this._template) + "</span>").show();
+		} else if(monetary.settings.profile_new_content_box){
+			this._using_content_box = true;
 			this.create_new_content_box(profile_money);
 		} else {
+			let $last_head = $("td.headings:last");
 
-			// Look for custom element, otherwise we in insert
-			// after the date registered.
+			if($last_head.length){
+				let $row = $last_head.parent();
+				let $money_td = $("<td class='monetary-profile-money'><span data-monetary-money>" + monetary.utils.money_str(profile_money, true) + "</span></td>");
+				let currency_name = monetary.settings.currency_name + monetary.settings.currency_separator;
 
-			let $custom = $(".monetary-profile-money");
-
-			if($custom.length){
-				this.using_custom = true;
-				this.template = $custom.text();
-
-				$custom.html("<span data-monetary-money>" + monetary.utils.full_money_str(profile_money, this.template) + "</span>").show();
-			} else {
-				let $last_head = $("td.headings:last");
-
-				if($last_head.length){
-					let $row = $last_head.parent();
-					let $money_td = $("<td class='monetary-profile-money'><span data-monetary-money>" + monetary.utils.money_str(profile_money, true) + "</span></td>");
-					let currency_name = monetary.settings.currency_name + monetary.settings.currency_separator;
-
-					$("<tr/>").html("<td>" + currency_name + "</td>").append($money_td).insertAfter($row);
-				}
+				$("<tr/>").html("<td>" + currency_name + "</td>").append($money_td).insertAfter($row);
 			}
 		}
+
+		this._$money_elem = $(".monetary-profile-money");
 	}
 
 	static create_new_content_box(profile_money = 0){
@@ -69,15 +70,7 @@ monetary.profile = class {
 			return;
 		}
 
-		let $money_elem = $(".monetary-profile-money");
-
-		// Can't find the default element?  Look for custom one then.
-
-		if(!$money_elem.length){
-			$money_elem = $(".monetary-profile-money-custom");
-		}
-
-		if(!$money_elem.length){
+		if(!this._$money_elem.length){
 			return;
 		}
 
@@ -96,15 +89,15 @@ monetary.profile = class {
 			} else {
 				let $edit_image = $("<img class='monetary-edit-icon' src='" + monetary.settings.images.edit + "' alt='Edit' title='Edit' />");
 
-				$edit_image.on("click", () => this.edit_dialog(cur_profile, $money_elem));
+				$edit_image.on("click", () => this.edit_dialog(cur_profile));
 
-				$money_elem.append($edit_image);
+				this._$money_elem.append($edit_image);
 			}
 		}
 	}
 
-	static edit_dialog(profile_id = 0, $money_elem = null){
-		if(!profile_id || !$money_elem){
+	static edit_dialog(profile_id = 0){
+		if(!profile_id){
 			return;
 		}
 
@@ -124,10 +117,10 @@ monetary.profile = class {
 
 		let $dialog_html = $("<span />").html(dialog_html);
 
-		$dialog_html.find("button#monetary-set-money").on("click", () => this.set_money(profile_id, $money_elem));
-		$dialog_html.find("button#monetary-reset-money").on("click", () => this.reset_money(profile_id, $money_elem));
-		$dialog_html.find("button#monetary-add-money").on("click", () => this.add_remove_money(profile_id, $money_elem));
-		$dialog_html.find("button#monetary-remove-money").on("click", () => this.add_remove_money(profile_id, $money_elem, true));
+		$dialog_html.find("button#monetary-set-money").on("click", () => this.set_money(profile_id));
+		$dialog_html.find("button#monetary-reset-money").on("click", () => this.reset_money(profile_id));
+		$dialog_html.find("button#monetary-add-money").on("click", () => this.add_remove_money(profile_id));
+		$dialog_html.find("button#monetary-remove-money").on("click", () => this.add_remove_money(profile_id, true));
 
 		let $dialog = pb.window.dialog("monetary-edit-money-dialog", {
 
@@ -156,28 +149,28 @@ monetary.profile = class {
 		});
 	}
 
-	static set_money(profile_id = 0, $money_elem = null){
+	static set_money(profile_id = 0){
 		let $field = $("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]");
 		let value = parseFloat($field.val());
 		let current_money = monetary.api.get(profile_id).money();
 
 		if(value != current_money){
 			monetary.api.set(profile_id).money(value);
-			this.save_and_update(profile_id, $money_elem);
+			this.save_and_update(profile_id);
 		}
 	}
 
-	static reset_money(profile_id = 0, $money_elem = null){
+	static reset_money(profile_id = 0){
 		let current_money = monetary.api.get(profile_id).money();
 
 		if(current_money != 0){
 			$("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]").val(0);
 			monetary.api.set(profile_id).money(0);
-			this.save_and_update(profile_id, $money_elem);
+			this.save_and_update(profile_id);
 		}
 	}
 
-	static add_remove_money(profile_id = 0, $money_elem = null, remove = false){
+	static add_remove_money(profile_id = 0, remove = false){
 		let $field = $("#monetary-edit-money-dialog").find("input[name=monetary-edit-adjust-money]");
 		let value = parseFloat($field.val());
 		let current_money = monetary.api.get(profile_id).money();
@@ -190,29 +183,52 @@ monetary.profile = class {
 				monetary.api.increase(profile_id).money(value);
 			}
 
-			this.save_and_update(profile_id, $money_elem);
+			this.save_and_update(profile_id);
 		}
 	}
 
-	static save_and_update(profile_id = 0, $money_elem = null){
+	static save_and_update(profile_id = 0){
 		monetary.api.save(profile_id).then(status => {
-			let money = monetary.api.get(profile_id).money();
-			let money_str = "";
-
-			if(this.using_content_box){
-				money_str = monetary.utils.full_money_str(money);
-			} else if(this.using_custom){
-				money_str = monetary.utils.full_money_str(money, this.template);
-			} else {
-				money_str = monetary.utils.money_str(money, true);
-			}
-
-			$money_elem.find("span[data-monetary-money]").html(money_str);
-			
-			//monetary.api.sync.update()
+			this.update(profile_id);
+			monetary.api.sync(profile_id);
 		}).catch(status => {
 			pb.window.alert("Monetary Error", "Could not edit money (ID#" + profile_id + ").<br /><br />" + yootil.html_encode(status.message));
 		});
+	}
+
+	static update(profile_id = 0){
+		let money = monetary.api.get(profile_id).money();
+		let money_str = "";
+
+		if(this._using_content_box){
+			money_str = monetary.utils.full_money_str(money);
+		} else if(this._using_custom){
+			money_str = monetary.utils.full_money_str(money, this._template);
+		} else {
+			money_str = monetary.utils.money_str(money, true);
+		}
+
+		this._$money_elem.find("span[data-monetary-money]").html(money_str);
+	}
+
+	static get using_custom(){
+		return this._using_custom;
+	}
+
+	static get using_content_box(){
+		return this._using_content_box;
+	}
+
+	static get template(){
+		return this._template;
+	}
+
+	static get initialised(){
+		return this._initialised;
+	}
+
+	static get money_elem(){
+		return this._$money_elem;
 	}
 
 };
