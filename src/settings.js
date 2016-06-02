@@ -41,6 +41,8 @@ monetary.settings = class {
 				// Permissions
 
 				this._members_who_can_edit = settings.members_who_can_edit;
+				this._categories_can_not_earn = settings.categories_can_not_earn;
+				this._boards_can_not_earn = settings.boards_can_not_earn;
 			}
 
 			if(plugin.images){
@@ -107,6 +109,14 @@ monetary.settings = class {
 
 	static get members_who_can_edit(){
 		return this._members_who_can_edit;
+	}
+
+	static get categories_can_not_earn(){
+		return this._categories_can_not_earn;
+	}
+
+	static get boards_can_not_earn(){
+		return this._boards_can_not_earn;
 	}
 
 };

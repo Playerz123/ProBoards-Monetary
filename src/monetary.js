@@ -36,11 +36,12 @@ class monetary {
 
 		this.settings.setup();
 		this.setup_data();
-		this.api.init();
 
-		if(this.settings.profile_show_money && yootil.location.profile_home() && yootil.page.member.exists()){
-			this.profile.init();
-		}
+		// Inits
+
+		this.api.init();
+		this.profile.init();
+		this.mini_profile.init();
 
 		return this;
 	}
@@ -102,7 +103,7 @@ class monetary {
 		let user_data = proboards.plugin.keys.data[this.enums.PLUGIN_KEY];
 
 		for(let [key, value] of Object.entries(user_data)){
-			let id = ~~ key;
+			let id = parseInt(key, 10);
 
 			if(!this._DATA.has(id)){
 				this._DATA.set(id, new monetary.user_data(id, value));

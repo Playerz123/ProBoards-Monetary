@@ -10,7 +10,7 @@ monetary.user_data = class {
 	}
 
 	save(){
-		$(monetary.api.events).trigger("user_data_save", this._DATA);
+		$(monetary.api.events).trigger("monetary.user_data_key_saved", this._DATA);
 		
 		return yootil.key.set(monetary.enums.PLUGIN_KEY, this._DATA, this._id);
 	}

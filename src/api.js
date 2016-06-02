@@ -6,7 +6,7 @@ monetary.api = class {
 	}
 
 	static data(user_id = 0){
-		let id = ~~ user_id;
+		let id = parseInt(user_id, 10);
 
 		if(id > 0){
 			if(!monetary._DATA.has(id)){
@@ -130,7 +130,13 @@ monetary.api = class {
 			return null;
 		}
 
-		this._sync.update(user_data.get("data"));
+		let data = user_data.get("data");
+
+		$(monetary.api.events).trigger("monetary.before_sync", data);
+		
+		this._sync.update(data);
+
+		$(monetary.api.events).trigger("monetary.after_sync", data);
 	}
 
 };

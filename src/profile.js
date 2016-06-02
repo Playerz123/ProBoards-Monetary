@@ -12,6 +12,10 @@
 monetary.profile = class {
 
 	static init(){
+		if(!monetary.settings.profile_show_money || !yootil.location.profile_home() || !yootil.page.member.exists()){
+			return;
+		}
+
 		this._initialised = true;
 		this._using_custom = false;
 		this._using_content_box = false;
@@ -66,33 +70,17 @@ monetary.profile = class {
 	}
 
 	static add_edit_ability(){
-		if(!monetary.settings.members_who_can_edit.length){
-			return;
-		}
-
 		if(!this._$money_elem.length){
 			return;
 		}
 
-		let cur_user = yootil.user.id();
-		let cur_profile = yootil.page.member.id();
+		if(monetary.permissions.can_edit_money()){
+			let cur_profile = yootil.page.member.id();
+			let $edit_image = $("<img class='monetary-edit-icon' src='" + monetary.settings.images.edit + "' alt='Edit' title='Edit' />");
 
-		// Array.prototype.includes is strict, and ProBoards elements are strings for now :(
-		// Using .find for the moment until we discuss plugin side of things for v6.
+			$edit_image.on("click", () => this.edit_dialog(cur_profile));
 
-		if(monetary.settings.members_who_can_edit.find(id => (~~ id) == cur_user)){
-
-			// Is the profile owned by the current user?  If so, and is not staff, bail out.
-
-			if(cur_profile == cur_user && !yootil.user.staff()){
-				return;
-			} else {
-				let $edit_image = $("<img class='monetary-edit-icon' src='" + monetary.settings.images.edit + "' alt='Edit' title='Edit' />");
-
-				$edit_image.on("click", () => this.edit_dialog(cur_profile));
-
-				this._$money_elem.append($edit_image);
-			}
+			this._$money_elem.append($edit_image);
 		}
 	}
 
