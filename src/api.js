@@ -1,5 +1,10 @@
 monetary.api = class {
 
+	static init(){
+		this.events = {};
+		this._sync = new yootil.sync(monetary.enums.SYNC_KEY, this.get(yootil.user.id()).data(), new monetary.sync_handler());
+	}
+
 	static data(user_id = 0){
 		let id = ~~ user_id;
 

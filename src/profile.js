@@ -133,15 +133,28 @@ monetary.profile = class {
 			html: $dialog_html,
 
 			open: function(){
-				let users_money = monetary.utils.money_format(monetary.api.get(profile_id).money(), true);
+				let current_money = monetary.api.get(profile_id).money();
+				let money_str = monetary.utils.money_format(current_money, true);
 
-				$(this).find("input[name=monetary-edit-money]").val(users_money);
+				$(this).find("input[name=monetary-edit-money]").val(money_str);
+
+				$(monetary.api.events).trigger("monetary.profile_edit_money_open", {
+
+					profile_id,
+					current_money
+
+				});
 			},
 
 			buttons: {
 
 				"Close": function(){
 					$(this).dialog("close");
+					$(monetary.api.events).trigger("monetary.profile_edit_money_close", {
+
+						profile_id
+
+					});
 				}
 
 			}
@@ -151,36 +164,60 @@ monetary.profile = class {
 
 	static set_money(profile_id = 0){
 		let $field = $("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]");
-		let value = parseFloat($field.val());
-		let current_money = monetary.api.get(profile_id).money();
+		let data = {
 
-		if(value != current_money){
-			monetary.api.set(profile_id).money(value);
+			profile_id,
+			new_value: parseFloat($field.val()),
+			old_value: monetary.api.get(profile_id).money()
+
+		};
+
+		if(data.new_value != data.old_value){
+			$(monetary.api.events).trigger("monetary.profile_edit_money_set", data);
+			monetary.api.set(profile_id).money(data.new_value);
 			this.save_and_update(profile_id);
 		}
 	}
 
 	static reset_money(profile_id = 0){
-		let current_money = monetary.api.get(profile_id).money();
+		let data = {
 
-		if(current_money != 0){
-			$("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]").val(0);
-			monetary.api.set(profile_id).money(0);
+			profile_id,
+			old_value: monetary.api.get(profile_id).money(),
+			new_value: 0
+		};
+
+		if(data.old_value != 0){
+			$(monetary.api.events).trigger("monetary.profile_edit_money_reset", data);
+			$("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]").val(data.new_value);
+			monetary.api.set(profile_id).money(data.new_value);
 			this.save_and_update(profile_id);
 		}
 	}
 
 	static add_remove_money(profile_id = 0, remove = false){
 		let $field = $("#monetary-edit-money-dialog").find("input[name=monetary-edit-adjust-money]");
+		let old_value = monetary.api.get(profile_id).money();
 		let value = parseFloat($field.val());
-		let current_money = monetary.api.get(profile_id).money();
-		let new_value = (remove)? (current_money - value) : (current_money + value);
+		
+		let data = {
 
-		if(current_money != new_value){
+			profile_id,
+			removed: remove,
+			added: !remove,
+			value,
+			old_value,
+			new_value: (remove)? (old_value - value) : (old_value + value)
+
+		};
+
+		if(data.old_value != data.new_value){
+			$(monetary.api.events).trigger("monetary.profile_edit_money_add_remove", data);
+
 			if(remove){
-				monetary.api.decrease(profile_id).money(value);
+				monetary.api.decrease(profile_id).money(data.value);
 			} else {
-				monetary.api.increase(profile_id).money(value);
+				monetary.api.increase(profile_id).money(data.value);
 			}
 
 			this.save_and_update(profile_id);
@@ -188,8 +225,21 @@ monetary.profile = class {
 	}
 
 	static save_and_update(profile_id = 0){
+		$(monetary.api.events).trigger("monetary.profile_edit_money_before_save", {
+
+			profile_id
+
+		});
+
 		monetary.api.save(profile_id).then(status => {
 			this.update(profile_id);
+
+			$(monetary.api.events).trigger("monetary.profile_edit_money_saved", {
+
+				profile_id
+
+			});
+
 			monetary.api.sync(profile_id);
 		}).catch(status => {
 			pb.window.alert("Monetary Error", "Could not edit money (ID#" + profile_id + ").<br /><br />" + yootil.html_encode(status.message));
@@ -197,18 +247,27 @@ monetary.profile = class {
 	}
 
 	static update(profile_id = 0){
-		let money = monetary.api.get(profile_id).money();
-		let money_str = "";
+		let data = {
 
-		if(this._using_content_box){
-			money_str = monetary.utils.full_money_str(money);
-		} else if(this._using_custom){
-			money_str = monetary.utils.full_money_str(money, this._template);
-		} else {
-			money_str = monetary.utils.money_str(money, true);
+			profile_id,
+			money: monetary.api.get(profile_id).money(),
+			money_str: ""
+
 		}
 
-		this._$money_elem.find("span[data-monetary-money]").html(money_str);
+		$(monetary.api.events).trigger("monetary.profile_edit_money_before_dom_update", data);
+
+		if(this._using_content_box){
+			data.money_str = monetary.utils.full_money_str(data.money);
+		} else if(this._using_custom){
+			data.money_str = monetary.utils.full_money_str(data.money, this._template);
+		} else {
+			data.money_str = monetary.utils.money_str(data.money, true);
+		}
+
+		this._$money_elem.find("span[data-monetary-money]").html(data.money_str);
+
+		$(monetary.api.events).trigger("monetary.profile_edit_money_after_dom_update", data);
 	}
 
 	static get using_custom(){
