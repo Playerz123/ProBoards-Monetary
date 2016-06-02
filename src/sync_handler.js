@@ -23,7 +23,7 @@ monetary.sync_handler = class {
 
 	update_profile(){
 		if(monetary.profile.initialised && yootil.page.member.id() == yootil.user.id()){
-			monetary.profile.update(yootil.user.id());
+			monetary.profile.update_dom(yootil.user.id());
 		}
 	}
 
