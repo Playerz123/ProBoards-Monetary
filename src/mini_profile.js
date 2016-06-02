@@ -23,7 +23,7 @@ monetary.mini_profile = class {
 	}
 
 	static add_money_to_mini_profiles(){
-		let mini_profiles = yootil.get
+		//let mini_profiles = yootil.get
 	}
 
 };

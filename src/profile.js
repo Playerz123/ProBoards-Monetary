@@ -220,7 +220,7 @@ monetary.profile = class {
 		});
 
 		monetary.api.save(profile_id).then(status => {
-			this.update(profile_id);
+			this.update_dom(profile_id);
 
 			$(monetary.api.events).trigger("monetary.profile_edit_money_saved", {
 
@@ -234,7 +234,7 @@ monetary.profile = class {
 		});
 	}
 
-	static update(profile_id = 0){
+	static update_dom(profile_id = 0){
 		let data = {
 
 			profile_id,
@@ -243,8 +243,6 @@ monetary.profile = class {
 
 		}
 
-		$(monetary.api.events).trigger("monetary.profile_edit_money_before_dom_update", data);
-
 		if(this._using_content_box){
 			data.money_str = monetary.utils.full_money_str(data.money);
 		} else if(this._using_custom){
@@ -252,6 +250,8 @@ monetary.profile = class {
 		} else {
 			data.money_str = monetary.utils.money_str(data.money, true);
 		}
+
+		$(monetary.api.events).trigger("monetary.profile_edit_money_before_dom_update", data);
 
 		this._$money_elem.find("span[data-monetary-money]").html(data.money_str);
 
