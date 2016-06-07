@@ -1,7 +1,7 @@
 monetary.api = class {
 
 	static init(){
-		this.events = {};
+		this.events = Object.create(null);
 		this._sync = new yootil.sync(monetary.enums.SYNC_KEY, this.get(yootil.user.id()).data(), new monetary.sync_handler());
 	}
 

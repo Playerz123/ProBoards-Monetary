@@ -8,23 +8,20 @@
 class monetary {
 
 	static init(){
-		this.enums = {
+		this.enums = Object.create(null);
 
-			PLUGIN_ID: "pixeldepth_monetary",
-			PLUGIN_KEY: "pixeldepth_money",
-			SYNC_KEY: "monetary",
-			PLUGIN_VERSION: "{VER}",
-			PLUGIN_CALLED: yootil.ts(),
+		this.enums.PLUGIN_ID = "pixeldepth_monetary";
+		this.enums.PLUGIN_KEY = "pixeldepth_money";
+		this.enums.PLUGIN_VERSION = "{VER}";
+		this.enums.PLUGIN_CALLED = yootil.ts();
 
-			YOOTIL_MIN_REQUIRED_VERSION: "2.0.0",
+		this.enums.SYNC_KEY = "monetary";
 
-			DATA_KEYS: {
+		this.enums.YOOTIL_MIN_REQUIRED_VERSION = "2.0.0";
 
-				MONEY: "m"
+		this.enums.DATA_KEYS = Object.create(null);
 
-			}
-
-		};
+		this.enums.DATA_KEYS.MONEY = "m";
 
 		Object.freeze(this.enums);
 
@@ -37,12 +34,29 @@ class monetary {
 		this.settings.setup();
 		this.setup_data();
 
+		// Extension pre inits
+		
+		yootil.extension.run("monetary").pre_inits();
+		
 		// Inits
 
 		this.api.init();
+
+		// Extension inits run after API init
+
+		yootil.extension.run("monetary").inits();
+
 		this.profile.init();
 		this.mini_profile.init();
 
+		// Extension post inits
+
+		yootil.extension.run("monetary").post_inits();
+
+		// Ready inits
+
+		$(yootil.extension.run("monetary").ready);
+		
 		return this;
 	}
 

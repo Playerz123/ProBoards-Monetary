@@ -31,7 +31,10 @@ monetary.profile = class {
 	}
 
 	static add_money_to_profile(){
-		let profile_money = monetary.api.get(yootil.page.member.id()).money();
+		let data = Object.create(null);
+
+		data.profile_id = yootil.page.member.id();
+		data.money = monetary.api.get(data.profile_id).money();
 
 		// Look for custom element, otherwise we in insert
 		// after the date registered.
@@ -42,16 +45,25 @@ monetary.profile = class {
 			this._using_custom = true;
 			this._template = $custom.text();
 
-			$custom.html("<span data-monetary-money>" + monetary.utils.full_money_str(profile_money, this._template) + "</span>").show();
+			data.template = this._template;
+			data.money_str = monetary.utils.full_money_str(data.money, this._template);
+
+			$(monetary.api.events).trigger("monetary.before_money_shown", data);
+
+			$custom.html("<span data-monetary-money>" + data.money_str + "</span>").show();
 		} else if(monetary.settings.profile_new_content_box){
 			this._using_content_box = true;
-			this.create_new_content_box(profile_money);
+			this.create_new_content_box(data);
 		} else {
 			let $last_head = $("td.headings:last");
 
 			if($last_head.length){
+				data.money_str = monetary.utils.money_str(data.money, true);
+
+				$(monetary.api.events).trigger("monetary.before_money_shown", data);
+
 				let $row = $last_head.parent();
-				let $money_td = $("<td class='monetary-profile-money'><span data-monetary-money>" + monetary.utils.money_str(profile_money, true) + "</span></td>");
+				let $money_td = $("<td class='monetary-profile-money'><span data-monetary-money>" + data.money_str + "</span></td>");
 				let currency_name = monetary.settings.currency_name + monetary.settings.currency_separator;
 
 				$("<tr/>").html("<td>" + currency_name + "</td>").append($money_td).insertAfter($row);
@@ -61,9 +73,13 @@ monetary.profile = class {
 		this._$money_elem = $(".monetary-profile-money");
 	}
 
-	static create_new_content_box(profile_money = 0){
+	static create_new_content_box(data){
+		data.money_str = monetary.utils.full_money_str(data.money);
+
+		$(monetary.api.events).trigger("monetary.before_money_shown", data);
+
 		let $content_box = yootil.create.profile_content_box("monetary-profile-content-box");
-		let $span = $("<span class='monetary-profile-money'><span data-monetary-money>" + monetary.utils.full_money_str(profile_money) + "</span></span>");
+		let $span = $("<span class='monetary-profile-money'><span data-monetary-money>" + data.money_str + "</span></span>");
 
 		$content_box.append($span);
 		$content_box.prependTo("#center-column");
@@ -252,6 +268,7 @@ monetary.profile = class {
 		}
 
 		$(monetary.api.events).trigger("monetary.profile_edit_money_before_dom_update", data);
+		$(monetary.api.events).trigger("monetary.before_money_shown", data);
 
 		this._$money_elem.find("span[data-monetary-money]").html(data.money_str);
 

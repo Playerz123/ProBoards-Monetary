@@ -2,11 +2,9 @@ monetary.user_data = class {
 
 	constructor(user_id = 0, data = {}){
 		this._id = user_id;
-		this._DATA = {
+		this._DATA = Object.create(null);
 
-			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0
-
-		};
+		this._DATA[monetary.enums.DATA_KEYS.MONEY] = parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0;
 	}
 
 	save(){
@@ -16,7 +14,7 @@ monetary.user_data = class {
 	}
 
 	get(key = ""){
-		if(this._DATA.hasOwnProperty(key)){
+		if(key in this._DATA){
 			return this._DATA[key];
 		} else if(key == "data"){
 			return this._DATA;
@@ -26,7 +24,7 @@ monetary.user_data = class {
 	}
 
 	set(key = "", value){
-		if(this._DATA.hasOwnProperty(key)){
+		if(key in this._DATA){
 			this._DATA[key] = value;
 
 			return true;
