@@ -49,4 +49,8 @@ monetary.permissions = class {
 		return true;
 	}
 
+	static can_earn(){
+		return this.can_earn_in_category() && this.can_earn_in_board();
+	}
+
 };

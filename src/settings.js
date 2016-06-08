@@ -47,6 +47,12 @@ monetary.settings = class {
 				this._members_who_can_edit = settings.members_who_can_edit;
 				this._categories_can_not_earn = settings.categories_can_not_earn;
 				this._boards_can_not_earn = settings.boards_can_not_earn;
+
+				// Earning amounts
+
+				this._amounts.post = parseFloat(settings.new_post);
+				this._amounts.thread = parseFloat(settings.new_thread);
+				this._amounts.poll = parseFloat(settings.new_poll);
 			}
 
 			if(plugin.images){

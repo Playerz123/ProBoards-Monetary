@@ -58,6 +58,7 @@ class monetary {
 
 		this.profile.init();
 		this.mini_profile.init();
+		this.post.init();
 
 		// Extension post inits
 

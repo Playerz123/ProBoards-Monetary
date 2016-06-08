@@ -93,7 +93,7 @@ monetary.mini_profile = class {
 
 				$elem.show();
 			} else {
-				console.warn("Monetary Mini Profile: Could not user link.");
+				console.warn("Monetary Mini Profile: Could not find user link.");
 			}
 
 		});
