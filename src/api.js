@@ -9,14 +9,14 @@ monetary.api = class {
 		let id = parseInt(user_id, 10);
 
 		if(id > 0){
-			if(!monetary._DATA.has(id)){
-				monetary._DATA.set(id, new monetary.user_data(id));
+			if(!monetary._KEY_DATA.has(id)){
+				monetary._KEY_DATA.set(id, new monetary.user_data(id));
 			}
 
-			return monetary._DATA.get(id);
+			return monetary._KEY_DATA.get(id);
 		}
 
-		console.error("monetary.api: User ID not valid");
+		console.warn("Monetary API: User ID not valid");
 
 		return null;
 	}
@@ -104,19 +104,20 @@ monetary.api = class {
 	}
 	
 	static save(user_id = 0){
-		let p = new Promise((resolve, reject) => {
+		return new Promise((resolve, reject) => {
 			let user_data = this.data(user_id);
 
 			if(user_data){
 				user_data.save().then(status => resolve(status)).catch(status => reject(status));
 			} else {
-				reject({
-					message: "No data"
-				});
+				let evt_obj = Object.create(null);
+
+				evt_obj.user_id = user_id;
+				evt_obj.message = "No user data";
+
+				reject(evt_obj);
 			}
 		});
-		
-		return p;
 	}
 
 	static sync(user_id){
@@ -137,6 +138,14 @@ monetary.api = class {
 		this._sync.update(data);
 
 		$(monetary.api.events).trigger("monetary.after_sync", data);
+	}
+
+	static refresh_all_data(){
+		monetary.setup_data();
+	}
+	
+	static clear_all_data(){
+		monetary._KEY_DATA.clear();
 	}
 
 };

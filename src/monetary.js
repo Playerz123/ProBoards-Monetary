@@ -3,6 +3,12 @@
  * @static
  *
  * Main class.
+ *
+ * Custom element (i.e profile and mini profile):
+ *
+ * <div class="monetary-user-money">
+ *     {CURRENCY_NAME}{CURRENCY_SEPARATOR}{CURRENCY_SEPARATOR_SPACE}{CURRENCY_SYMBOL}{MONEY}
+ * </div>
  */
 
 class monetary {
@@ -33,7 +39,7 @@ class monetary {
 			return;
 		}
 
-		this._DATA = new Map();
+		this._KEY_DATA = new Map();
 
 		this.settings.setup();
 		this.setup_data();
@@ -66,11 +72,11 @@ class monetary {
 
 	static correct_yootil_version(){
 		if(typeof yootil == "undefined"){
-			console.error("Yootil is required for the Monetary plugin, but was not found.");
+			console.warn("Yootil is required for the Monetary plugin, but was not found.");
 
 			return false;
 		} else if(yootil.compare_version(yootil.version, this.enums.YOOTIL_MIN_REQUIRED_VERSION) == -1){
-			console.error("Monetary plugin requires a mininum Yootil version of " + this.enums.YOOTIL_MIN_REQUIRED_VERSION + ".");
+			console.warn("Monetary plugin requires a mininum Yootil version of " + this.enums.YOOTIL_MIN_REQUIRED_VERSION + ".");
 
 			return false;
 		}
@@ -123,8 +129,8 @@ class monetary {
 		for(let [key, value] of Object.entries(user_data)){
 			let id = parseInt(key, 10);
 
-			if(!this._DATA.has(id)){
-				this._DATA.set(id, new monetary.user_data(id, value));
+			if(!this._KEY_DATA.has(id)){
+				this._KEY_DATA.set(id, new monetary.user_data(id, value));
 			}
 		}
 	}

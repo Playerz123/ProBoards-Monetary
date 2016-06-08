@@ -1,11 +1,5 @@
 /**
  * Will handle anything on the profile page
- *
- * Custom element:
- *
- * <div class="monetary-profile-money">
- *     {CURRENCY_NAME}{CURRENCY_SEPARATOR}{CURRENCY_SEPARATOR_SPACE}{CURRENCY_SYMBOL}{MONEY}
- * </div>
  */
 
 
@@ -39,7 +33,7 @@ monetary.profile = class {
 		// Look for custom element, otherwise we in insert
 		// after the date registered.
 
-		let $custom = $(".monetary-profile-money");
+		let $custom = $(".monetary-user-money");
 
 		if($custom.length){
 			this._using_custom = true;
@@ -50,7 +44,7 @@ monetary.profile = class {
 
 			$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
-			$custom.html("<span data-monetary-money>" + evt_data.money_str + "</span>").show();
+			$custom.html("<span data-monetary-money>" + evt_data.money_str + "</span>");
 		} else if(monetary.settings.profile_new_content_box){
 			this._using_content_box = true;
 			this.create_new_content_box(evt_data);
@@ -63,14 +57,14 @@ monetary.profile = class {
 				$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
 				let $row = $last_head.parent();
-				let $money_td = $("<td class='monetary-profile-money'><span data-monetary-money>" + evt_data.money_str + "</span></td>");
+				let $money_td = $("<td class='monetary-user-money'><span data-monetary-money>" + evt_data.money_str + "</span></td>");
 				let currency_name = monetary.settings.currency_name + monetary.settings.currency_separator;
 
 				$("<tr/>").html("<td>" + currency_name + "</td>").append($money_td).insertAfter($row);
 			}
 		}
 
-		this._$money_elem = $(".monetary-profile-money");
+		this._$money_elem = $(".monetary-user-money").show();
 	}
 
 	static create_new_content_box(evt_data){
@@ -79,7 +73,7 @@ monetary.profile = class {
 		$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
 		let $content_box = yootil.create.profile_content_box("monetary-profile-content-box");
-		let $span = $("<span class='monetary-profile-money'><span data-monetary-money>" + evt_data.money_str + "</span></span>");
+		let $span = $("<span class='monetary-user-money'><span data-monetary-money>" + evt_data.money_str + "</span></span>");
 
 		$content_box.append($span);
 		$content_box.prependTo("#center-column");
@@ -229,7 +223,7 @@ monetary.profile = class {
 		$(monetary.api.events).trigger("monetary.profile_edit_money_before_save", evt_data);
 
 		monetary.api.save(profile_id).then(status => {
-			this.update_dom(profile_id);
+			this.update(profile_id);
 
 			let evt_data = Object.create(null);
 
@@ -243,7 +237,7 @@ monetary.profile = class {
 		});
 	}
 
-	static update_dom(profile_id = 0){
+	static update(profile_id = 0){
 		let evt_data = Object.create(null);
 
 		evt_data.profile_id = profile_id;

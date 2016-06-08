@@ -8,7 +8,7 @@ monetary.settings = class {
 			post: 25,
 			birthday: 200,
 			new_user: 200
-		
+
 		});
 	}
 
@@ -37,6 +37,10 @@ monetary.settings = class {
 
 				this._profile_show_money = !! ~~ settings.profile_show_money;
 				this._profile_new_content_box = !! ~~ settings.profile_new_cbox;
+
+				// Mini profile settings
+
+				this._mini_profile_show_money = !! ~~ settings.mini_profile_show_money;
 
 				// Permissions
 
@@ -119,6 +123,10 @@ monetary.settings = class {
 
 	static get boards_can_not_earn(){
 		return this._boards_can_not_earn;
+	}
+
+	static get mini_profile_show_money(){
+		return this._mini_profile_show_money;
 	}
 
 };

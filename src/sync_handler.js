@@ -11,6 +11,7 @@ monetary.sync_handler = class {
 
 	ready(){
 		this.update_profile();
+		this.update_mini_profile();
 	}
 
 	get old_data(){
@@ -23,7 +24,13 @@ monetary.sync_handler = class {
 
 	update_profile(){
 		if(monetary.profile.initialised && yootil.page.member.id() == yootil.user.id()){
-			monetary.profile.update_dom(yootil.user.id());
+			monetary.profile.update(yootil.user.id());
+		}
+	}
+	
+	update_mini_profile(){
+		if(monetary.mini_profile.initialised){
+			monetary.mini_profile.update(yootil.user.id());
 		}
 	}
 
