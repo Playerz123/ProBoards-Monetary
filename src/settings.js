@@ -1,13 +1,15 @@
 monetary.settings = class {
 
 	static init(){
-		this._amounts = Object.create(null);
+		this._amounts = Object.assign(Object.create(null), {
 
-		this._amounts.thread = 50;
-		this._amounts.poll = 10;
-		this._amounts.post = 25;
-		this._amounts.birthday = 200;
-		this._amounts.new_user = 200;
+			thread: 50,
+			poll: 10,
+			post: 25,
+			birthday: 200,
+			new_user: 200
+		
+		});
 	}
 
 	static setup(){

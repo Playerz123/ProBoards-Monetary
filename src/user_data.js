@@ -2,9 +2,11 @@ monetary.user_data = class {
 
 	constructor(user_id = 0, data = {}){
 		this._id = user_id;
-		this._DATA = Object.create(null);
+		this._DATA = Object.assign(Object.create(null), {
 
-		this._DATA[monetary.enums.DATA_KEYS.MONEY] = parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0;
+			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0
+
+		});
 	}
 
 	save(){

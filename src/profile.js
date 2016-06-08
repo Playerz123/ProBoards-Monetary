@@ -31,10 +31,10 @@ monetary.profile = class {
 	}
 
 	static add_money_to_profile(){
-		let data = Object.create(null);
+		let evt_data = Object.create(null);
 
-		data.profile_id = yootil.page.member.id();
-		data.money = monetary.api.get(data.profile_id).money();
+		evt_data.profile_id = yootil.page.member.id();
+		evt_data.money = monetary.api.get(evt_data.profile_id).money();
 
 		// Look for custom element, otherwise we in insert
 		// after the date registered.
@@ -45,25 +45,25 @@ monetary.profile = class {
 			this._using_custom = true;
 			this._template = $custom.text();
 
-			data.template = this._template;
-			data.money_str = monetary.utils.full_money_str(data.money, this._template);
+			evt_data.template = this._template;
+			evt_data.money_str = monetary.utils.full_money_str(evt_data.money, this._template);
 
-			$(monetary.api.events).trigger("monetary.before_money_shown", data);
+			$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
-			$custom.html("<span data-monetary-money>" + data.money_str + "</span>").show();
+			$custom.html("<span data-monetary-money>" + evt_data.money_str + "</span>").show();
 		} else if(monetary.settings.profile_new_content_box){
 			this._using_content_box = true;
-			this.create_new_content_box(data);
+			this.create_new_content_box(evt_data);
 		} else {
 			let $last_head = $("td.headings:last");
 
 			if($last_head.length){
-				data.money_str = monetary.utils.money_str(data.money, true);
+				evt_data.money_str = monetary.utils.money_str(evt_data.money, true);
 
-				$(monetary.api.events).trigger("monetary.before_money_shown", data);
+				$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
 				let $row = $last_head.parent();
-				let $money_td = $("<td class='monetary-profile-money'><span data-monetary-money>" + data.money_str + "</span></td>");
+				let $money_td = $("<td class='monetary-profile-money'><span data-monetary-money>" + evt_data.money_str + "</span></td>");
 				let currency_name = monetary.settings.currency_name + monetary.settings.currency_separator;
 
 				$("<tr/>").html("<td>" + currency_name + "</td>").append($money_td).insertAfter($row);
@@ -73,13 +73,13 @@ monetary.profile = class {
 		this._$money_elem = $(".monetary-profile-money");
 	}
 
-	static create_new_content_box(data){
-		data.money_str = monetary.utils.full_money_str(data.money);
+	static create_new_content_box(evt_data){
+		evt_data.money_str = monetary.utils.full_money_str(evt_data.money);
 
-		$(monetary.api.events).trigger("monetary.before_money_shown", data);
+		$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
 		let $content_box = yootil.create.profile_content_box("monetary-profile-content-box");
-		let $span = $("<span class='monetary-profile-money'><span data-monetary-money>" + data.money_str + "</span></span>");
+		let $span = $("<span class='monetary-profile-money'><span data-monetary-money>" + evt_data.money_str + "</span></span>");
 
 		$content_box.append($span);
 		$content_box.prependTo("#center-column");
@@ -137,28 +137,26 @@ monetary.profile = class {
 			html: $dialog_html,
 
 			open: function(){
-				let current_money = monetary.api.get(profile_id).money();
-				let money_str = monetary.utils.money_format(current_money, true);
+				let evt_data = Object.create(null);
 
-				$(this).find("input[name=monetary-edit-money]").val(money_str);
+				evt_data.profile_id = profile_id;
+				evt_data.money = monetary.api.get(profile_id).money();
+				evt_data.money_str = monetary.utils.money_format(evt_data.money, true);
 
-				$(monetary.api.events).trigger("monetary.profile_edit_money_open", {
+				$(monetary.api.events).trigger("monetary.profile_edit_money_open", evt_data);
 
-					profile_id,
-					current_money
-
-				});
+				$(this).find("input[name=monetary-edit-money]").val(evt_data.money_str);
 			},
 
 			buttons: {
 
 				"Close": function(){
+					let evt_data = Object.create(null);
+
+					evt_data.profile_id = profile_id;
+
 					$(this).dialog("close");
-					$(monetary.api.events).trigger("monetary.profile_edit_money_close", {
-
-						profile_id
-
-					});
+					$(monetary.api.events).trigger("monetary.profile_edit_money_close", evt_data);
 				}
 
 			}
@@ -168,33 +166,30 @@ monetary.profile = class {
 
 	static set_money(profile_id = 0){
 		let $field = $("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]");
-		let data = {
+		let evt_data = Object.create(null);
 
-			profile_id,
-			new_value: parseFloat($field.val()),
-			old_value: monetary.api.get(profile_id).money()
+		evt_data.profile_id = profile_id;
+		evt_data.new_value = parseFloat($field.val());
+		evt_data.old_value = monetary.api.get(profile_id).money();
 
-		};
-
-		if(data.new_value != data.old_value){
-			$(monetary.api.events).trigger("monetary.profile_edit_money_set", data);
-			monetary.api.set(profile_id).money(data.new_value);
+		if(evt_data.new_value != evt_data.old_value){
+			$(monetary.api.events).trigger("monetary.profile_edit_money_set", evt_data);
+			monetary.api.set(profile_id).money(evt_data.new_value);
 			this.save_and_update(profile_id);
 		}
 	}
 
 	static reset_money(profile_id = 0){
-		let data = {
+		let evt_data = Object.create(null);
 
-			profile_id,
-			old_value: monetary.api.get(profile_id).money(),
-			new_value: 0
-		};
+		evt_data.profile_id = profile_id;
+		evt_data.old_value = monetary.api.get(profile_id).money();
+		evt_data.new_value = 0;
 
-		if(data.old_value != 0){
-			$(monetary.api.events).trigger("monetary.profile_edit_money_reset", data);
-			$("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]").val(data.new_value);
-			monetary.api.set(profile_id).money(data.new_value);
+		if(evt_data.old_value != 0){
+			$(monetary.api.events).trigger("monetary.profile_edit_money_reset", evt_data);
+			$("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]").val(evt_data.new_value);
+			monetary.api.set(profile_id).money(evt_data.new_value);
 			this.save_and_update(profile_id);
 		}
 	}
@@ -204,24 +199,22 @@ monetary.profile = class {
 		let old_value = monetary.api.get(profile_id).money();
 		let value = parseFloat($field.val());
 		
-		let data = {
+		let evt_data = Object.create(null);
 
-			profile_id,
-			removed: remove,
-			added: !remove,
-			value,
-			old_value,
-			new_value: (remove)? (old_value - value) : (old_value + value)
+		evt_data.profile_id = profile_id;
+		evt_data.removed = remove;
+		evt_data.added = !remove;
+		evt_data.value = value;
+		evt_data.old_value = old_value;
+		evt_data.new_value = (remove)? (old_value - value) : (old_value + value);
 
-		};
-
-		if(data.old_value != data.new_value){
-			$(monetary.api.events).trigger("monetary.profile_edit_money_add_remove", data);
+		if(evt_data.old_value != evt_data.new_value){
+			$(monetary.api.events).trigger("monetary.profile_edit_money_add_remove", evt_data);
 
 			if(remove){
-				monetary.api.decrease(profile_id).money(data.value);
+				monetary.api.decrease(profile_id).money(evt_data.value);
 			} else {
-				monetary.api.increase(profile_id).money(data.value);
+				monetary.api.increase(profile_id).money(evt_data.value);
 			}
 
 			this.save_and_update(profile_id);
@@ -229,20 +222,20 @@ monetary.profile = class {
 	}
 
 	static save_and_update(profile_id = 0){
-		$(monetary.api.events).trigger("monetary.profile_edit_money_before_save", {
+		let evt_data = Object.create(null);
 
-			profile_id
+		evt_data.profile_id = profile_id;
 
-		});
+		$(monetary.api.events).trigger("monetary.profile_edit_money_before_save", evt_data);
 
 		monetary.api.save(profile_id).then(status => {
 			this.update_dom(profile_id);
 
-			$(monetary.api.events).trigger("monetary.profile_edit_money_saved", {
+			let evt_data = Object.create(null);
 
-				profile_id
+			evt_data.profile_id = profile_id;
 
-			});
+			$(monetary.api.events).trigger("monetary.profile_edit_money_saved", evt_data);
 
 			monetary.api.sync(profile_id);
 		}).catch(status => {
@@ -251,28 +244,26 @@ monetary.profile = class {
 	}
 
 	static update_dom(profile_id = 0){
-		let data = {
+		let evt_data = Object.create(null);
 
-			profile_id,
-			money: monetary.api.get(profile_id).money(),
-			money_str: ""
-
-		}
+		evt_data.profile_id = profile_id;
+		evt_data.money = monetary.api.get(profile_id).money();
+		evt_data.money_str = "";
 
 		if(this._using_content_box){
-			data.money_str = monetary.utils.full_money_str(data.money);
+			evt_data.money_str = monetary.utils.full_money_str(evt_data.money);
 		} else if(this._using_custom){
-			data.money_str = monetary.utils.full_money_str(data.money, this._template);
+			evt_data.money_str = monetary.utils.full_money_str(evt_data.money, this._template);
 		} else {
-			data.money_str = monetary.utils.money_str(data.money, true);
+			evt_data.money_str = monetary.utils.money_str(evt_data.money, true);
 		}
 
-		$(monetary.api.events).trigger("monetary.profile_edit_money_before_dom_update", data);
-		$(monetary.api.events).trigger("monetary.before_money_shown", data);
+		$(monetary.api.events).trigger("monetary.profile_edit_money_before_dom_update", evt_data);
+		$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
-		this._$money_elem.find("span[data-monetary-money]").html(data.money_str);
+		this._$money_elem.find("span[data-monetary-money]").html(evt_data.money_str);
 
-		$(monetary.api.events).trigger("monetary.profile_edit_money_after_dom_update", data);
+		$(monetary.api.events).trigger("monetary.profile_edit_money_after_dom_update", evt_data);
 	}
 
 	static get using_custom(){

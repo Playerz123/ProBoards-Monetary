@@ -8,20 +8,24 @@
 class monetary {
 
 	static init(){
-		this.enums = Object.create(null);
+		this.enums = Object.assign(Object.create(null), {
 
-		this.enums.PLUGIN_ID = "pixeldepth_monetary";
-		this.enums.PLUGIN_KEY = "pixeldepth_money";
-		this.enums.PLUGIN_VERSION = "{VER}";
-		this.enums.PLUGIN_CALLED = yootil.ts();
+			PLUGIN_ID: "pixeldepth_monetary",
+			PLUGIN_KEY: "pixeldepth_money",
+			PLUGIN_VERSION: "{VER}",
+			PLUGIN_CALLED: yootil.ts(),
 
-		this.enums.SYNC_KEY = "monetary";
+			SYNC_KEY: "monetary",
 
-		this.enums.YOOTIL_MIN_REQUIRED_VERSION = "2.0.0";
+			YOOTIL_MIN_REQUIRED_VERSION: "2.0.0",
 
-		this.enums.DATA_KEYS = Object.create(null);
+			DATA_KEYS: Object.assign(Object.create(null), {
 
-		this.enums.DATA_KEYS.MONEY = "m";
+				MONEY: "m"
+
+			})
+
+		});
 
 		Object.freeze(this.enums);
 
