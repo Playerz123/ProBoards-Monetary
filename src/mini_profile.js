@@ -31,13 +31,13 @@ monetary.mini_profile = class {
 	}
 
 	static add_money_to_mini_profiles(){
-		let mini_profiles = yootil.get.mini_profiles();
+		let $mini_profiles = yootil.get.mini_profiles();
 		
-		if(!mini_profiles.length || mini_profiles.find(".monetary-user-money[data-monetary-money]").length){
+		if(!$mini_profiles.length || $mini_profiles.find(".monetary-user-money[data-monetary-money]").length){
 			return;
 		}
-		
-		mini_profiles.each((index, item) => {
+
+		$mini_profiles.each((index, item) => {
 			let $mini_profile = $(item);
 			let $elem = $mini_profile.find(".monetary-user-money");
 			let $user_link = $mini_profile.find("a.user-link[href*='user/']");
