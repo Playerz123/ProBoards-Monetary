@@ -1,4 +1,3 @@
-// TODO: Add in events so plugins can modify the amounts (i.e Word Count).
 // TODO: Category + Board amount overrides (i.e earn different amounts in different areas).
 
 monetary.post = class {
@@ -41,23 +40,24 @@ monetary.post = class {
 	}
 	
 	static set_on(){
-		let evt_obj = Object.create(null);
+		let evt_data = Object.create(null);
 
-		evt_obj.user_id = yootil.user.id();
-		evt_obj.amounts = monetary.settings.amounts;
-		evt_obj.money = monetary.api.get(evt_obj.user_id).money();
+		evt_data.user_id = yootil.user.id();
+		evt_data.amounts = monetary.settings.amounts;
+
+		$(monetary.api.events).trigger("monetary.before_post_money", evt_data);
 
 		let money_to_add = 0;
 
 		if(!this._editing){
 			if(this._new_thread){
-				money_to_add += parseFloat(evt_obj.amounts.thread);
+				money_to_add += parseFloat(evt_data.amounts.thread);
 
 				if(this._poll){
-					money_to_add += parseFloat(evt_obj.amounts.poll);
+					money_to_add += parseFloat(evt_data.amounts.poll);
 				}
 			} else if(this._new_post){
-				money_to_add += parseFloat(evt_obj.amounts.post);
+				money_to_add += parseFloat(evt_data.amounts.post);
 			}
 
 			if(money_to_add){
@@ -76,16 +76,27 @@ monetary.post = class {
 				// Possible fix: Check if form has been submitted, if so, remove previous money added.
 
 				if(this._submitted){
+					let evt_data_2 = Object.create(null);
+
+					evt_data_2.user_id = evt_data.user_id;
+					evt_data_2.money_added = evt_data.money_to_add;
+					evt_data_2.money_before = monetary.api.get(evt_data.user_id).money();
+
 					if(this._money_added){
-						monetary.api.decrease(evt_obj.user_id).money(this._money_added);
+						monetary.api.decrease(evt_data.user_id).money(this._money_added);
+						evt_data_2.money_added -= this._money_added;
 					}
 
 					// Update the new value of money being added in case we need to remove it again.
 
 					this._money_added = money_to_add;
 
-					monetary.api.increase(evt_obj.user_id).money(money_to_add);
-					yootil.key.set_on(monetary.enums.PLUGIN_KEY, monetary.api.get(evt_obj.user_id).data(), evt_obj.user_id, this._hook);
+					monetary.api.increase(evt_data.user_id).money(money_to_add);
+					yootil.key.set_on(monetary.enums.PLUGIN_KEY, monetary.api.get(evt_data.user_id).data(), evt_data.user_id, this._hook);
+
+					evt_data_2.money_after = monetary.api.get(evt_data.user_id).money();
+
+					$(monetary.api.events).trigger("monetary.after_post_money", evt_data_2);
 				}
 			}
 		}

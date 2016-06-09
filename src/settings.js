@@ -60,7 +60,7 @@ monetary.settings = class {
 			}
 		}
 
-		Object.freeze(this._amounts);
+		//Object.freeze(this._amounts);
 	}
 
 	static get images(){
