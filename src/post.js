@@ -1,11 +1,9 @@
-// TODO: Category + Board amount overrides (i.e earn different amounts in different areas).
-
 monetary.post = class {
 
 	static init(){
-		if(!monetary.settings.post_amount && !monetary.settings.thread_amount && !monetary.settings.poll_amount){
+		/*if(!monetary.settings.post_amount && !monetary.settings.thread_amount && !monetary.settings.poll_amount){
 			return;
-		}
+		}*/
 
 		if((yootil.location.posting() || yootil.location.thread()) && monetary.permissions.can_earn()){
 			this._initialised = true;
@@ -43,7 +41,9 @@ monetary.post = class {
 		let evt_data = Object.create(null);
 
 		evt_data.user_id = yootil.user.id();
-		evt_data.amounts = monetary.settings.amounts;
+		evt_data.amounts = monetary.settings.earning_amounts();
+
+		console.log(evt_data.amounts);
 
 		$(monetary.api.events).trigger("monetary.before_post_money", evt_data);
 
@@ -51,13 +51,13 @@ monetary.post = class {
 
 		if(!this._editing){
 			if(this._new_thread){
-				money_to_add += parseFloat(evt_data.amounts.thread);
+				money_to_add += parseFloat(evt_data.amounts.new_thread);
 
 				if(this._poll){
-					money_to_add += parseFloat(evt_data.amounts.poll);
+					money_to_add += parseFloat(evt_data.amounts.new_poll);
 				}
 			} else if(this._new_post){
-				money_to_add += parseFloat(evt_data.amounts.post);
+				money_to_add += parseFloat(evt_data.amounts.new_post);
 			}
 
 			if(money_to_add){
