@@ -1,6 +1,6 @@
 /**
 * @license
-* Monetary 2.0.0 [baead3397d6cb3df6ca72cdeececa7724ca90850da74cc7aace19ccb175fce1a]
+* Monetary 2.0.0
 * The MIT License (MIT)
 *
 * Copyright (c) 2016 pixeldepth.net - http://support.proboards.com/user/2671
