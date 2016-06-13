@@ -42,6 +42,10 @@ monetary.api = class {
 			
 			data(){
 				return user_data.get("data");
+			},
+
+			rank(){
+				return user_data.get(monetary.enums.DATA_KEYS.RANK);
 			}
 
 		};
@@ -62,6 +66,10 @@ monetary.api = class {
 
 			data(value = {}){
 				return user_data.set("data", value);
+			},
+
+			rank(rank = 0){
+				return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(rank, 10));
 			}
 
 		};

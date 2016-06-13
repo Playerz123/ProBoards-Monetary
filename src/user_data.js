@@ -4,7 +4,8 @@ monetary.user_data = class {
 		this._id = user_id;
 		this._DATA = Object.assign(Object.create(null), {
 
-			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0
+			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0,
+			[monetary.enums.DATA_KEYS.RANK]: parseFloat(data[monetary.enums.DATA_KEYS.RANK]) || 1,
 
 		});
 	}

@@ -25,6 +25,8 @@ monetary.settings = class {
 			if(plugin.settings){
 				let settings = plugin.settings;
 
+				monetary.SETTINGS = settings;
+
 				// Currency settings
 
 				this._currency_name = settings.currency_name;

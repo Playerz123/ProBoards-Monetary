@@ -53,7 +53,8 @@ class monetary {
 
 			DATA_KEYS: Object.assign(Object.create(null), {
 
-				MONEY: "m"
+				MONEY: "m",
+				RANK: "rnk"
 
 			})
 
@@ -78,13 +79,13 @@ class monetary {
 
 		this.api.init();
 
-		// Extension inits run after API init
+		// Sub modules
+
+		this.initialise_modules();
+
+		// Extension inits
 
 		yootil.extension.run("monetary").inits();
-
-		this.profile.init();
-		this.mini_profile.init();
-		this.post.init();
 
 		// Extension post inits
 
@@ -95,6 +96,16 @@ class monetary {
 		$(yootil.extension.run("monetary").ready);
 		
 		return this;
+	}
+
+	static initialise_modules(){
+		this.profile.init();
+		this.mini_profile.init();
+
+		if(yootil.user.logged_in()){
+			this.post.init();
+			this.rank_up.init();
+		}
 	}
 
 	static correct_yootil_version(){
@@ -150,6 +161,14 @@ class monetary {
 		return this._PLUGIN;
 	}
 
+	static set SETTINGS(settings){
+		this._SETTINGS = settings;
+	}
+
+	static get SETTINGS(){
+		return this._SETTINGS;
+	}
+
 	static setup_data(){
 		let user_data = proboards.plugin.keys.data[this.enums.PLUGIN_KEY];
 
@@ -174,7 +193,8 @@ monetary.user_data = class {
 		this._id = user_id;
 		this._DATA = Object.assign(Object.create(null), {
 
-			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0
+			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0,
+			[monetary.enums.DATA_KEYS.RANK]: parseFloat(data[monetary.enums.DATA_KEYS.RANK]) || 1,
 
 		});
 	}
@@ -281,6 +301,8 @@ monetary.settings = class {
 
 			if(plugin.settings){
 				let settings = plugin.settings;
+
+				monetary.SETTINGS = settings;
 
 				// Currency settings
 
@@ -517,7 +539,7 @@ monetary.permissions = class {
 		return true;
 	}
 
-	static can_earn(){
+	static category_board_enabled(){
 		return this.can_earn_in_category() && this.can_earn_in_board();
 	}
 
@@ -567,6 +589,10 @@ monetary.api = class {
 			
 			data(){
 				return user_data.get("data");
+			},
+
+			rank(){
+				return user_data.get(monetary.enums.DATA_KEYS.RANK);
 			}
 
 		};
@@ -587,6 +613,10 @@ monetary.api = class {
 
 			data(value = {}){
 				return user_data.set("data", value);
+			},
+
+			rank(rank = 0){
+				return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(rank, 10));
 			}
 
 		};
@@ -1136,11 +1166,7 @@ monetary.mini_profile = class {
 monetary.post = class {
 
 	static init(){
-		/*if(!monetary.settings.post_amount && !monetary.settings.thread_amount && !monetary.settings.poll_amount){
-			return;
-		}*/
-
-		if((yootil.location.posting() || yootil.location.thread()) && monetary.permissions.can_earn()){
+		if((yootil.location.posting() || yootil.location.thread())){
 			this._initialised = true;
 			this._submitted = false;
 			this._hook = "";
@@ -1177,39 +1203,37 @@ monetary.post = class {
 
 		evt_data.user_id = yootil.user.id();
 		evt_data.amounts = monetary.settings.earning_amounts();
-
-		console.log(evt_data.amounts);
+		evt_data.add = 0;
+		evt_data.remove = 0;
+		evt_data.category_can_earn = monetary.permissions.can_earn_in_category();
+		evt_data.board_can_earn = monetary.permissions.can_earn_in_board();
 
 		$(monetary.api.events).trigger("monetary.before_post_money", evt_data);
 
 		let money_to_add = 0;
 
 		if(!this._editing){
-			if(this._new_thread){
-				money_to_add += parseFloat(evt_data.amounts.new_thread);
+			if(evt_data.category_can_earn && evt_data.board_can_earn){
+				if(this._new_thread){
+					money_to_add += parseFloat(evt_data.amounts.new_thread);
 
-				if(this._poll){
-					money_to_add += parseFloat(evt_data.amounts.new_poll);
+					if(this._poll){
+						money_to_add += parseFloat(evt_data.amounts.new_poll);
+					}
+				} else if(this._new_post){
+					money_to_add += parseFloat(evt_data.amounts.new_post);
 				}
-			} else if(this._new_post){
-				money_to_add += parseFloat(evt_data.amounts.new_post);
+			}
+
+			if(evt_data.add){
+				money_to_add += parseFloat(evt_data.add);
+			}
+
+			if(evt_data.remove){
+				money_to_add -= parseFloat(evt_data.remove);
 			}
 
 			if(money_to_add){
-
-				// Need to remove any money that may have been added to the key.  ProBoards needs to support
-				// passing a handler to handle updating the key instead of set_on running straight away.
-
-				// We do bind to the submit event above, however, if the form doesn't validate, then money gets
-				// added to the data object.  The user could keep submitting, and the money will keep going up.
-
-				// Also need to think about plugins such as Chris' word count plugin that awards money based on
-				// length of post (I think?).  If the user submits the post, but it fails, the calculations are
-				// already done and added.  What if the post length changes?  No way for the updated amounts to
-				// get added correctly (big flaw with the old monetary plugin).
-
-				// Possible fix: Check if form has been submitted, if so, remove previous money added.
-
 				if(this._submitted){
 					let evt_data_2 = Object.create(null);
 
@@ -1255,6 +1279,58 @@ monetary.post = class {
 
 	static get has_poll(){
 		return this._poll;
+	}
+
+};
+
+monetary.rank_up = class {
+
+	static init(){
+		this._enabled = true;
+		this._amount = 250;
+		
+		this.setup();
+
+		if(this._enabled && (yootil.location.posting() || yootil.location.thread())){
+			this.check_rank();
+		}
+	}
+	
+	static setup(){
+		if(monetary.SETTINGS){
+			let settings = monetary.SETTINGS;
+
+			// Rank up settings
+
+			this._enabled = !! ~~ settings.rank_up_enabled;
+			this._amount = parseFloat(settings.rank_up_amount);
+		}
+	}
+
+	static check_rank(){
+		if(this.ranked_up()){
+			$(monetary.api.events).on("monetary.before_post_money", (evt, data) => {
+				data.add = this._amount;
+			 });
+
+			monetary.api.set(yootil.user.id()).rank(yootil.user.rank().id);
+		}
+		
+	}
+	
+	static get enabled(){
+		return this._enabled;
+	}
+
+	static get amount(){
+		return this._amount;
+	}
+
+	static ranked_up(){
+		let current_rank = yootil.user.rank().id;
+		let old_rank = monetary.api.get(yootil.user.id()).rank();
+
+		return (current_rank > old_rank && old_rank);
 	}
 
 };

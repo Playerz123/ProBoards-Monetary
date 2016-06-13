@@ -27,7 +27,8 @@ class monetary {
 
 			DATA_KEYS: Object.assign(Object.create(null), {
 
-				MONEY: "m"
+				MONEY: "m",
+				RANK: "rnk"
 
 			})
 
@@ -52,13 +53,13 @@ class monetary {
 
 		this.api.init();
 
-		// Extension inits run after API init
+		// Sub modules
+
+		this.initialise_modules();
+
+		// Extension inits
 
 		yootil.extension.run("monetary").inits();
-
-		this.profile.init();
-		this.mini_profile.init();
-		this.post.init();
 
 		// Extension post inits
 
@@ -69,6 +70,16 @@ class monetary {
 		$(yootil.extension.run("monetary").ready);
 		
 		return this;
+	}
+
+	static initialise_modules(){
+		this.profile.init();
+		this.mini_profile.init();
+
+		if(yootil.user.logged_in()){
+			this.post.init();
+			this.rank_up.init();
+		}
 	}
 
 	static correct_yootil_version(){
@@ -122,6 +133,14 @@ class monetary {
 
 	static get PLUGIN(){
 		return this._PLUGIN;
+	}
+
+	static set SETTINGS(settings){
+		this._SETTINGS = settings;
+	}
+
+	static get SETTINGS(){
+		return this._SETTINGS;
 	}
 
 	static setup_data(){

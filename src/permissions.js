@@ -49,7 +49,7 @@ monetary.permissions = class {
 		return true;
 	}
 
-	static can_earn(){
+	static category_board_enabled(){
 		return this.can_earn_in_category() && this.can_earn_in_board();
 	}
 

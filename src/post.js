@@ -1,11 +1,7 @@
 monetary.post = class {
 
 	static init(){
-		/*if(!monetary.settings.post_amount && !monetary.settings.thread_amount && !monetary.settings.poll_amount){
-			return;
-		}*/
-
-		if((yootil.location.posting() || yootil.location.thread()) && monetary.permissions.can_earn()){
+		if((yootil.location.posting() || yootil.location.thread())){
 			this._initialised = true;
 			this._submitted = false;
 			this._hook = "";
@@ -42,39 +38,37 @@ monetary.post = class {
 
 		evt_data.user_id = yootil.user.id();
 		evt_data.amounts = monetary.settings.earning_amounts();
-
-		console.log(evt_data.amounts);
+		evt_data.add = 0;
+		evt_data.remove = 0;
+		evt_data.category_can_earn = monetary.permissions.can_earn_in_category();
+		evt_data.board_can_earn = monetary.permissions.can_earn_in_board();
 
 		$(monetary.api.events).trigger("monetary.before_post_money", evt_data);
 
 		let money_to_add = 0;
 
 		if(!this._editing){
-			if(this._new_thread){
-				money_to_add += parseFloat(evt_data.amounts.new_thread);
+			if(evt_data.category_can_earn && evt_data.board_can_earn){
+				if(this._new_thread){
+					money_to_add += parseFloat(evt_data.amounts.new_thread);
 
-				if(this._poll){
-					money_to_add += parseFloat(evt_data.amounts.new_poll);
+					if(this._poll){
+						money_to_add += parseFloat(evt_data.amounts.new_poll);
+					}
+				} else if(this._new_post){
+					money_to_add += parseFloat(evt_data.amounts.new_post);
 				}
-			} else if(this._new_post){
-				money_to_add += parseFloat(evt_data.amounts.new_post);
+			}
+
+			if(evt_data.add){
+				money_to_add += parseFloat(evt_data.add);
+			}
+
+			if(evt_data.remove){
+				money_to_add -= parseFloat(evt_data.remove);
 			}
 
 			if(money_to_add){
-
-				// Need to remove any money that may have been added to the key.  ProBoards needs to support
-				// passing a handler to handle updating the key instead of set_on running straight away.
-
-				// We do bind to the submit event above, however, if the form doesn't validate, then money gets
-				// added to the data object.  The user could keep submitting, and the money will keep going up.
-
-				// Also need to think about plugins such as Chris' word count plugin that awards money based on
-				// length of post (I think?).  If the user submits the post, but it fails, the calculations are
-				// already done and added.  What if the post length changes?  No way for the updated amounts to
-				// get added correctly (big flaw with the old monetary plugin).
-
-				// Possible fix: Check if form has been submitted, if so, remove previous money added.
-
 				if(this._submitted){
 					let evt_data_2 = Object.create(null);
 
