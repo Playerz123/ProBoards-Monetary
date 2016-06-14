@@ -73,14 +73,14 @@ monetary.new_member = class {
 				buttons: {
 
 					"Reject": function(){
-						pb.window.confirm("Are you sure you want to reject?", () => {
+						pb.window.confirm("Are you sure you want to reject this reward?", () => {
 							evt_data.rejected = true;
 
 							$(monetary.api.events).trigger("monetary.new_member.before_save", evt_data);
 
 							monetary.api.set(evt_data.user_id).new_member_paid();
 
-							monetary.api.save(evt_data.user_id).then(status =>{
+							monetary.api.save(evt_data.user_id).then(status => {
 								$(monetary.api.events).trigger("monetary.new_member.after_save", evt_data);
 
 								monetary.api.sync(evt_data.user_id);
@@ -107,7 +107,7 @@ monetary.new_member = class {
 
 							// Manually ran sync handler updates so we can update
 							// possible pages we might be on.
-							
+
 							monetary.sync_handler.update_all();
 						}).catch(status => {
 							console.warn("Monetary Error [New Member - A]", "Could save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
