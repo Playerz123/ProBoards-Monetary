@@ -85,7 +85,7 @@ monetary.new_member = class {
 
 								monetary.api.sync(evt_data.user_id);
 							}).catch(status =>{
-								console.warn("Monetary Error [New Member - R]", "Could save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+								console.warn("Monetary Error [New Member - R]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
 							});
 
 							$(this).dialog("close");
@@ -110,7 +110,7 @@ monetary.new_member = class {
 
 							monetary.sync_handler.update_all();
 						}).catch(status => {
-							console.warn("Monetary Error [New Member - A]", "Could save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+							console.warn("Monetary Error [New Member - A]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
 						});
 
 						$(this).dialog("close");
