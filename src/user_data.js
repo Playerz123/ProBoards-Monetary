@@ -5,13 +5,14 @@ monetary.user_data = class {
 		this._DATA = Object.assign(Object.create(null), {
 
 			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0,
-			[monetary.enums.DATA_KEYS.RANK]: parseFloat(data[monetary.enums.DATA_KEYS.RANK]) || 1,
+			[monetary.enums.DATA_KEYS.RANK]: parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1,
+			[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID]: parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0
 
 		});
 	}
 
 	save(){
-		$(monetary.api.events).trigger("monetary.user_data_key_saved", this._DATA);
+		$(monetary.api.events).trigger("monetary.user_data.before_key_saved", this._DATA);
 		
 		return yootil.key.set(monetary.enums.PLUGIN_KEY, this._DATA, this._id);
 	}
@@ -33,6 +34,18 @@ monetary.user_data = class {
 			return true;
 		} else if(key == "data"){
 			this._DATA = value;
+
+			return true;
+		}
+
+		return false;
+	}
+
+	clear(key = ""){
+		if(key in this._DATA){
+			return delete this._DATA[key];
+		} else if(key == "data"){
+			this._DATA = {};
 
 			return true;
 		}

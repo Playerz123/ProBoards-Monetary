@@ -1,7 +1,20 @@
 monetary.utils = class {
 
 	static full_money_str(money = 0, tpl = "{CURRENCY_NAME}{CURRENCY_SEPARATOR}{CURRENCY_SEPARATOR_SPACE}{CURRENCY_SYMBOL}{MONEY}"){
-		tpl = tpl.replace("{CURRENCY_NAME}", monetary.settings.currency_name);
+		let pattern = /(\{CURRENCY_NAME(\.(LOW|HIGH)ER)?\})/g;
+
+		if(tpl.match(pattern)){
+			tpl = tpl.replace(pattern, (... args) => {
+				let str = monetary.settings.currency_name;
+
+				if(args[3]){
+					str = str["to" + ((args[3] == "LOW")? "Lower" : "Upper") + "Case"]();
+				}
+
+				return str;
+			});
+		}
+
 		tpl = tpl.replace("{CURRENCY_SEPARATOR}", monetary.settings.currency_separator);
 		tpl = tpl.replace("{CURRENCY_SEPARATOR_SPACE}", ((monetary.settings.currency_separator_space)? " " : ""));
 		

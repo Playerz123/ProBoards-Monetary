@@ -2,7 +2,7 @@ monetary.api = class {
 
 	static init(){
 		this.events = Object.create(null);
-		this._sync = new yootil.sync(monetary.enums.SYNC_KEY, this.get(yootil.user.id()).data(), new monetary.sync_handler());
+		this._sync = new yootil.sync(monetary.enums.SYNC_KEY, this.get(yootil.user.id()).data(), monetary.sync_handler);
 	}
 
 	static data(user_id = 0){
@@ -46,6 +46,10 @@ monetary.api = class {
 
 			rank(){
 				return user_data.get(monetary.enums.DATA_KEYS.RANK);
+			},
+
+			new_member_paid(){
+				return !! user_data.get(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID);
 			}
 
 		};
@@ -70,6 +74,10 @@ monetary.api = class {
 
 			rank(rank = 0){
 				return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(rank, 10));
+			},
+
+			new_member_paid(){
+				return user_data.set(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, 1);
 			}
 
 		};
@@ -106,6 +114,30 @@ monetary.api = class {
 				let current_money = user_data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
 
 				return user_data.set(monetary.enums.DATA_KEYS.MONEY, current_money - parseFloat(amount));
+			}
+
+		};
+	}
+
+	static clear(user_id = 0){
+		let user_data = this.data(user_id);
+
+		if(!user_data){
+			return null;
+		}
+
+		return {
+
+			all(){
+				return user_data.clear("data");
+			},
+
+			rank_up(){
+				return user_data.clear(monetary.enums.DATA_KEYS.RANK);
+			},
+
+			new_member_paid(){
+				return user_data.clear(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID);
 			}
 
 		};
@@ -151,7 +183,7 @@ monetary.api = class {
 	static refresh_all_data(){
 		monetary.setup_data();
 	}
-	
+
 	static clear_all_data(){
 		monetary._KEY_DATA.clear();
 	}

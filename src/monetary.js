@@ -28,7 +28,8 @@ class monetary {
 			DATA_KEYS: Object.assign(Object.create(null), {
 
 				MONEY: "m",
-				RANK: "rnk"
+				RANK: "rnk",
+				NEW_MEMBER_PAID: "nmp"
 
 			})
 
@@ -79,6 +80,7 @@ class monetary {
 		if(yootil.user.logged_in()){
 			this.post.init();
 			this.rank_up.init();
+			this.new_member.init();
 		}
 	}
 

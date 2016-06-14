@@ -137,7 +137,7 @@ monetary.profile = class {
 				evt_data.money = monetary.api.get(profile_id).money();
 				evt_data.money_str = monetary.utils.money_format(evt_data.money, true);
 
-				$(monetary.api.events).trigger("monetary.profile_edit_money_open", evt_data);
+				$(monetary.api.events).trigger("monetary.profile.edit_money_opened", evt_data);
 
 				$(this).find("input[name=monetary-edit-money]").val(evt_data.money_str);
 			},
@@ -150,7 +150,7 @@ monetary.profile = class {
 					evt_data.profile_id = profile_id;
 
 					$(this).dialog("close");
-					$(monetary.api.events).trigger("monetary.profile_edit_money_close", evt_data);
+					$(monetary.api.events).trigger("monetary.profile.edit_money_closed", evt_data);
 				}
 
 			}
@@ -167,7 +167,7 @@ monetary.profile = class {
 		evt_data.old_value = monetary.api.get(profile_id).money();
 
 		if(evt_data.new_value != evt_data.old_value){
-			$(monetary.api.events).trigger("monetary.profile_edit_money_set", evt_data);
+			$(monetary.api.events).trigger("monetary.profile.edit_money_set", evt_data);
 			monetary.api.set(profile_id).money(evt_data.new_value);
 			this.save_and_update(profile_id);
 		}
@@ -181,7 +181,7 @@ monetary.profile = class {
 		evt_data.new_value = 0;
 
 		if(evt_data.old_value != 0){
-			$(monetary.api.events).trigger("monetary.profile_edit_money_reset", evt_data);
+			$(monetary.api.events).trigger("monetary.profile.edit_money_reset", evt_data);
 			$("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]").val(evt_data.new_value);
 			monetary.api.set(profile_id).money(evt_data.new_value);
 			this.save_and_update(profile_id);
@@ -203,7 +203,7 @@ monetary.profile = class {
 		evt_data.new_value = (remove)? (old_value - value) : (old_value + value);
 
 		if(evt_data.old_value != evt_data.new_value){
-			$(monetary.api.events).trigger("monetary.profile_edit_money_add_remove", evt_data);
+			$(monetary.api.events).trigger("monetary.profile.edit_money_add_remove", evt_data);
 
 			if(remove){
 				monetary.api.decrease(profile_id).money(evt_data.value);
@@ -220,7 +220,7 @@ monetary.profile = class {
 
 		evt_data.profile_id = profile_id;
 
-		$(monetary.api.events).trigger("monetary.profile_edit_money_before_save", evt_data);
+		$(monetary.api.events).trigger("monetary.profile.edit_money_before_save", evt_data);
 
 		monetary.api.save(profile_id).then(status => {
 			this.update(profile_id);
@@ -229,7 +229,7 @@ monetary.profile = class {
 
 			evt_data.profile_id = profile_id;
 
-			$(monetary.api.events).trigger("monetary.profile_edit_money_saved", evt_data);
+			$(monetary.api.events).trigger("monetary.profile.edit_money_saved", evt_data);
 
 			monetary.api.sync(profile_id);
 		}).catch(status => {
@@ -252,12 +252,12 @@ monetary.profile = class {
 			evt_data.money_str = monetary.utils.money_str(evt_data.money, true);
 		}
 
-		$(monetary.api.events).trigger("monetary.profile_edit_money_before_dom_update", evt_data);
+		$(monetary.api.events).trigger("monetary.profile.edit_money_before_dom_update", evt_data);
 		$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
 		this._$money_elem.find("span[data-monetary-money]").html(evt_data.money_str);
 
-		$(monetary.api.events).trigger("monetary.profile_edit_money_after_dom_update", evt_data);
+		$(monetary.api.events).trigger("monetary.profile.edit_money_after_dom_update", evt_data);
 	}
 
 	static get using_custom(){

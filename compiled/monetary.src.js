@@ -54,7 +54,8 @@ class monetary {
 			DATA_KEYS: Object.assign(Object.create(null), {
 
 				MONEY: "m",
-				RANK: "rnk"
+				RANK: "rnk",
+				NEW_MEMBER_PAID: "nmp"
 
 			})
 
@@ -105,6 +106,7 @@ class monetary {
 		if(yootil.user.logged_in()){
 			this.post.init();
 			this.rank_up.init();
+			this.new_member.init();
 		}
 	}
 
@@ -194,13 +196,14 @@ monetary.user_data = class {
 		this._DATA = Object.assign(Object.create(null), {
 
 			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0,
-			[monetary.enums.DATA_KEYS.RANK]: parseFloat(data[monetary.enums.DATA_KEYS.RANK]) || 1,
+			[monetary.enums.DATA_KEYS.RANK]: parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1,
+			[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID]: parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0
 
 		});
 	}
 
 	save(){
-		$(monetary.api.events).trigger("monetary.user_data_key_saved", this._DATA);
+		$(monetary.api.events).trigger("monetary.user_data.before_key_saved", this._DATA);
 		
 		return yootil.key.set(monetary.enums.PLUGIN_KEY, this._DATA, this._id);
 	}
@@ -229,12 +232,37 @@ monetary.user_data = class {
 		return false;
 	}
 
+	clear(key = ""){
+		if(key in this._DATA){
+			return delete this._DATA[key];
+		} else if(key == "data"){
+			this._DATA = {};
+
+			return true;
+		}
+
+		return false;
+	}
+
 };
 
 monetary.utils = class {
 
 	static full_money_str(money = 0, tpl = "{CURRENCY_NAME}{CURRENCY_SEPARATOR}{CURRENCY_SEPARATOR_SPACE}{CURRENCY_SYMBOL}{MONEY}"){
-		tpl = tpl.replace("{CURRENCY_NAME}", monetary.settings.currency_name);
+		let pattern = /(\{CURRENCY_NAME(\.(LOW|HIGH)ER)?\})/g;
+
+		if(tpl.match(pattern)){
+			tpl = tpl.replace(pattern, (... args) => {
+				let str = monetary.settings.currency_name;
+
+				if(args[3]){
+					str = str["to" + ((args[3] == "LOW")? "Lower" : "Upper") + "Case"]();
+				}
+
+				return str;
+			});
+		}
+
 		tpl = tpl.replace("{CURRENCY_SEPARATOR}", monetary.settings.currency_separator);
 		tpl = tpl.replace("{CURRENCY_SEPARATOR_SPACE}", ((monetary.settings.currency_separator_space)? " " : ""));
 		
@@ -549,7 +577,7 @@ monetary.api = class {
 
 	static init(){
 		this.events = Object.create(null);
-		this._sync = new yootil.sync(monetary.enums.SYNC_KEY, this.get(yootil.user.id()).data(), new monetary.sync_handler());
+		this._sync = new yootil.sync(monetary.enums.SYNC_KEY, this.get(yootil.user.id()).data(), monetary.sync_handler);
 	}
 
 	static data(user_id = 0){
@@ -593,6 +621,10 @@ monetary.api = class {
 
 			rank(){
 				return user_data.get(monetary.enums.DATA_KEYS.RANK);
+			},
+
+			new_member_paid(){
+				return !! user_data.get(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID);
 			}
 
 		};
@@ -617,6 +649,10 @@ monetary.api = class {
 
 			rank(rank = 0){
 				return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(rank, 10));
+			},
+
+			new_member_paid(){
+				return user_data.set(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, 1);
 			}
 
 		};
@@ -653,6 +689,30 @@ monetary.api = class {
 				let current_money = user_data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
 
 				return user_data.set(monetary.enums.DATA_KEYS.MONEY, current_money - parseFloat(amount));
+			}
+
+		};
+	}
+
+	static clear(user_id = 0){
+		let user_data = this.data(user_id);
+
+		if(!user_data){
+			return null;
+		}
+
+		return {
+
+			all(){
+				return user_data.clear("data");
+			},
+
+			rank_up(){
+				return user_data.clear(monetary.enums.DATA_KEYS.RANK);
+			},
+
+			new_member_paid(){
+				return user_data.clear(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID);
 			}
 
 		};
@@ -698,7 +758,7 @@ monetary.api = class {
 	static refresh_all_data(){
 		monetary.setup_data();
 	}
-	
+
 	static clear_all_data(){
 		monetary._KEY_DATA.clear();
 	}
@@ -707,7 +767,7 @@ monetary.api = class {
 
 monetary.sync_handler = class {
 
-	change(new_data, old_data){
+	static change(new_data, old_data){
 		this._new_data = new_data;
 		this._old_data = old_data;
 
@@ -716,29 +776,34 @@ monetary.sync_handler = class {
 		$(this.ready.bind(this));
 	}
 
-	ready(){
+	static ready(){
 		this.update_profile();
 		this.update_mini_profile();
 	}
 
-	get old_data(){
+	static get old_data(){
 		return this._old_data;
 	}
 
-	get new_data(){
+	static get new_data(){
 		return this._new_data;
 	}
 
-	update_profile(){
+	static update_profile(){
 		if(monetary.profile.initialised && yootil.page.member.id() == yootil.user.id()){
 			monetary.profile.update(yootil.user.id());
 		}
 	}
-	
-	update_mini_profile(){
+
+	static update_mini_profile(){
 		if(monetary.mini_profile.initialised){
 			monetary.mini_profile.update(yootil.user.id());
 		}
+	}
+
+	static update_all(){
+		this.update_profile();
+		this.update_mini_profile();
 	}
 
 }
@@ -882,7 +947,7 @@ monetary.profile = class {
 				evt_data.money = monetary.api.get(profile_id).money();
 				evt_data.money_str = monetary.utils.money_format(evt_data.money, true);
 
-				$(monetary.api.events).trigger("monetary.profile_edit_money_open", evt_data);
+				$(monetary.api.events).trigger("monetary.profile.edit_money_opened", evt_data);
 
 				$(this).find("input[name=monetary-edit-money]").val(evt_data.money_str);
 			},
@@ -895,7 +960,7 @@ monetary.profile = class {
 					evt_data.profile_id = profile_id;
 
 					$(this).dialog("close");
-					$(monetary.api.events).trigger("monetary.profile_edit_money_close", evt_data);
+					$(monetary.api.events).trigger("monetary.profile.edit_money_closed", evt_data);
 				}
 
 			}
@@ -912,7 +977,7 @@ monetary.profile = class {
 		evt_data.old_value = monetary.api.get(profile_id).money();
 
 		if(evt_data.new_value != evt_data.old_value){
-			$(monetary.api.events).trigger("monetary.profile_edit_money_set", evt_data);
+			$(monetary.api.events).trigger("monetary.profile.edit_money_set", evt_data);
 			monetary.api.set(profile_id).money(evt_data.new_value);
 			this.save_and_update(profile_id);
 		}
@@ -926,7 +991,7 @@ monetary.profile = class {
 		evt_data.new_value = 0;
 
 		if(evt_data.old_value != 0){
-			$(monetary.api.events).trigger("monetary.profile_edit_money_reset", evt_data);
+			$(monetary.api.events).trigger("monetary.profile.edit_money_reset", evt_data);
 			$("#monetary-edit-money-dialog").find("input[name=monetary-edit-money]").val(evt_data.new_value);
 			monetary.api.set(profile_id).money(evt_data.new_value);
 			this.save_and_update(profile_id);
@@ -948,7 +1013,7 @@ monetary.profile = class {
 		evt_data.new_value = (remove)? (old_value - value) : (old_value + value);
 
 		if(evt_data.old_value != evt_data.new_value){
-			$(monetary.api.events).trigger("monetary.profile_edit_money_add_remove", evt_data);
+			$(monetary.api.events).trigger("monetary.profile.edit_money_add_remove", evt_data);
 
 			if(remove){
 				monetary.api.decrease(profile_id).money(evt_data.value);
@@ -965,7 +1030,7 @@ monetary.profile = class {
 
 		evt_data.profile_id = profile_id;
 
-		$(monetary.api.events).trigger("monetary.profile_edit_money_before_save", evt_data);
+		$(monetary.api.events).trigger("monetary.profile.edit_money_before_save", evt_data);
 
 		monetary.api.save(profile_id).then(status => {
 			this.update(profile_id);
@@ -974,7 +1039,7 @@ monetary.profile = class {
 
 			evt_data.profile_id = profile_id;
 
-			$(monetary.api.events).trigger("monetary.profile_edit_money_saved", evt_data);
+			$(monetary.api.events).trigger("monetary.profile.edit_money_saved", evt_data);
 
 			monetary.api.sync(profile_id);
 		}).catch(status => {
@@ -997,12 +1062,12 @@ monetary.profile = class {
 			evt_data.money_str = monetary.utils.money_str(evt_data.money, true);
 		}
 
-		$(monetary.api.events).trigger("monetary.profile_edit_money_before_dom_update", evt_data);
+		$(monetary.api.events).trigger("monetary.profile.edit_money_before_dom_update", evt_data);
 		$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
 		this._$money_elem.find("span[data-monetary-money]").html(evt_data.money_str);
 
-		$(monetary.api.events).trigger("monetary.profile_edit_money_after_dom_update", evt_data);
+		$(monetary.api.events).trigger("monetary.profile.edit_money_after_dom_update", evt_data);
 	}
 
 	static get using_custom(){
@@ -1208,7 +1273,7 @@ monetary.post = class {
 		evt_data.category_can_earn = monetary.permissions.can_earn_in_category();
 		evt_data.board_can_earn = monetary.permissions.can_earn_in_board();
 
-		$(monetary.api.events).trigger("monetary.before_post_money", evt_data);
+		$(monetary.api.events).trigger("monetary.post.before", evt_data);
 
 		let money_to_add = 0;
 
@@ -1255,7 +1320,7 @@ monetary.post = class {
 
 					evt_data_2.money_after = monetary.api.get(evt_data.user_id).money();
 
-					$(monetary.api.events).trigger("monetary.after_post_money", evt_data_2);
+					$(monetary.api.events).trigger("monetary.post.after", evt_data_2);
 				}
 			}
 		}
@@ -1300,8 +1365,6 @@ monetary.rank_up = class {
 		if(monetary.SETTINGS){
 			let settings = monetary.SETTINGS;
 
-			// Rank up settings
-
 			this._enabled = !! ~~ settings.rank_up_enabled;
 			this._amount = parseFloat(settings.rank_up_amount);
 		}
@@ -1309,7 +1372,7 @@ monetary.rank_up = class {
 
 	static check_rank(){
 		if(this.ranked_up()){
-			$(monetary.api.events).on("monetary.before_post_money", (evt, data) => {
+			$(monetary.api.events).on("monetary.post.before", (evt, data) => {
 				data.add = this._amount;
 			 });
 
@@ -1331,6 +1394,156 @@ monetary.rank_up = class {
 		let old_rank = monetary.api.get(yootil.user.id()).rank();
 
 		return (current_rank > old_rank && old_rank);
+	}
+
+};
+
+monetary.new_member = class {
+
+	static init(){
+		this._amount = 0;
+		this._pay_old_members = false;
+		this._dialog_title = "New Registered Member Reward";
+		this._dialog_width = 220;
+		this._dialog_height = 350;
+		this._message = "You have received {CURRENCY_NAME.LOWER} for becoming a new member:<br /><br />{CURRENCY_SYMBOL}{MONEY}";
+
+		this.setup();
+
+		if(this._amount && !monetary.api.get(yootil.user.id()).new_member_paid()){
+			this.pay_member();
+		}
+	}
+
+	static setup(){
+		if(monetary.SETTINGS){
+			let settings = monetary.SETTINGS;
+
+			this._amount = parseFloat(settings.new_user_amount);
+			this._pay_old_members = !! ~~ settings.pay_old_users;
+
+			// Dialog
+
+			this._dialog_title = settings.new_user_dialog_title;
+			this._dialog_width = parseFloat(settings.new_user_dialog_width) || this._dialog_width;
+			this._dialog_height = parseFloat(settings.new_user_dialog_height) || this._dialog_height;
+			this._message = settings.new_user_message;
+		}
+	}
+
+	static pay_member(){
+		let now = yootil.ts();
+		let registered_on = (yootil.user.registered_on().unix_timestamp * 1000);
+		let diff = now - registered_on;
+
+		// We will consider a new member to be someone that registered in the
+		// last 48 hours.
+
+		let _48hrs = (60 * 60 * 48) * 1000;
+
+		if(this._pay_old_members || diff <= _48hrs){
+			let dialog_msg = pb.text.nl2br(monetary.utils.full_money_str(this._amount, this._message));
+			
+			dialog_msg = dialog_msg.replace("{MEMBER_NAME}", yootil.html_encode(yootil.user.name(), true));
+			
+			let evt_data = Object.create(null);
+
+			evt_data.user_id = yootil.user.id();
+			evt_data.money = monetary.api.get(evt_data.user_id).money();
+			evt_data.old_member = (diff > _48hrs)? true : false;
+			evt_data.difference = diff;
+			evt_data.message = dialog_msg;
+			evt_data.amount = this._amount;
+			evt_data.rejected = false;
+
+			let $dialog = pb.window.dialog("monetary-new-member-award-dialog", {
+
+				title: this._dialog_title,
+				modal: true,
+				height: this._dialog_height,
+				width: this._dialog_width,
+				resizable: false,
+				draggable: false,
+				html: dialog_msg,
+
+				open: function(){
+					$(monetary.api.events).trigger("monetary.new_member.dialog_open", evt_data);
+				},
+
+				buttons: {
+
+					"Reject": function(){
+						pb.window.confirm("Are you sure you want to reject?", () => {
+							evt_data.rejected = true;
+
+							$(monetary.api.events).trigger("monetary.new_member.before_save", evt_data);
+
+							monetary.api.set(evt_data.user_id).new_member_paid();
+
+							monetary.api.save(evt_data.user_id).then(status =>{
+								$(monetary.api.events).trigger("monetary.new_member.after_save", evt_data);
+
+								monetary.api.sync(evt_data.user_id);
+							}).catch(status =>{
+								console.warn("Monetary Error [New Member - R]", "Could save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+							});
+
+							$(this).dialog("close");
+						});
+					},
+
+					"Accept": function(){
+						evt_data.rejected = false;
+
+						$(monetary.api.events).trigger("monetary.new_member.before_save", evt_data);
+
+						monetary.api.set(evt_data.user_id).new_member_paid();
+						monetary.api.increase(evt_data.user_id).money(evt_data.amount);
+
+						monetary.api.save(evt_data.user_id).then(status => {
+							$(monetary.api.events).trigger("monetary.new_member.after_save", evt_data);
+
+							monetary.api.sync(evt_data.user_id);
+
+							// Manually ran sync handler updates so we can update
+							// possible pages we might be on.
+							
+							monetary.sync_handler.update_all();
+						}).catch(status => {
+							console.warn("Monetary Error [New Member - A]", "Could save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+						});
+
+						$(this).dialog("close");
+					}
+
+				}
+
+			});
+		}
+	}
+
+	static get amount(){
+		return this._amount;
+	}
+
+	static get pay_old_members(){
+		return this._pay_old_members;
+	}
+
+	static get dialog_title(){
+		return this._dialog_title;
+	}
+
+	static get dialog_width(){
+		return this._dialog_width;
+	}
+
+	static get dialog_height(){
+		return this._dialog_height;
+	}
+
+	static get message(){
+		return this._message;
 	}
 
 };

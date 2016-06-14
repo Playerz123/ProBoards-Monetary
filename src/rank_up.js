@@ -15,8 +15,6 @@ monetary.rank_up = class {
 		if(monetary.SETTINGS){
 			let settings = monetary.SETTINGS;
 
-			// Rank up settings
-
 			this._enabled = !! ~~ settings.rank_up_enabled;
 			this._amount = parseFloat(settings.rank_up_amount);
 		}
@@ -24,7 +22,7 @@ monetary.rank_up = class {
 
 	static check_rank(){
 		if(this.ranked_up()){
-			$(monetary.api.events).on("monetary.before_post_money", (evt, data) => {
+			$(monetary.api.events).on("monetary.post.before", (evt, data) => {
 				data.add = this._amount;
 			 });
 

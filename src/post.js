@@ -43,7 +43,7 @@ monetary.post = class {
 		evt_data.category_can_earn = monetary.permissions.can_earn_in_category();
 		evt_data.board_can_earn = monetary.permissions.can_earn_in_board();
 
-		$(monetary.api.events).trigger("monetary.before_post_money", evt_data);
+		$(monetary.api.events).trigger("monetary.post.before", evt_data);
 
 		let money_to_add = 0;
 
@@ -90,7 +90,7 @@ monetary.post = class {
 
 					evt_data_2.money_after = monetary.api.get(evt_data.user_id).money();
 
-					$(monetary.api.events).trigger("monetary.after_post_money", evt_data_2);
+					$(monetary.api.events).trigger("monetary.post.after", evt_data_2);
 				}
 			}
 		}

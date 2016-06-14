@@ -1,6 +1,6 @@
 monetary.sync_handler = class {
 
-	change(new_data, old_data){
+	static change(new_data, old_data){
 		this._new_data = new_data;
 		this._old_data = old_data;
 
@@ -9,29 +9,34 @@ monetary.sync_handler = class {
 		$(this.ready.bind(this));
 	}
 
-	ready(){
+	static ready(){
 		this.update_profile();
 		this.update_mini_profile();
 	}
 
-	get old_data(){
+	static get old_data(){
 		return this._old_data;
 	}
 
-	get new_data(){
+	static get new_data(){
 		return this._new_data;
 	}
 
-	update_profile(){
+	static update_profile(){
 		if(monetary.profile.initialised && yootil.page.member.id() == yootil.user.id()){
 			monetary.profile.update(yootil.user.id());
 		}
 	}
-	
-	update_mini_profile(){
+
+	static update_mini_profile(){
 		if(monetary.mini_profile.initialised){
 			monetary.mini_profile.update(yootil.user.id());
 		}
+	}
+
+	static update_all(){
+		this.update_profile();
+		this.update_mini_profile();
 	}
 
 }
