@@ -56,7 +56,10 @@ class monetary {
 				MONEY: "m",
 				RANK: "rnk",
 				NEW_MEMBER_PAID: "nmp",
-				BIRTHDAY_PAID: "bd"
+				BIRTHDAY_PAID: "bd",
+
+				WAGE_POSTS: "wp",
+				WAGE_EXPIRY: "we"
 
 			})
 
@@ -70,7 +73,7 @@ class monetary {
 
 		this._KEY_DATA = new Map();
 
-		this.settings.setup();
+		this.settings.init();
 		this.setup_data();
 
 		// Extension pre inits
@@ -107,6 +110,7 @@ class monetary {
 		if(yootil.user.logged_in()){
 			this.post.init();
 			this.rank_up.init();
+			this.wages.init();
 			this.new_member.init();
 			this.birthday.init();
 		}
@@ -177,16 +181,12 @@ class monetary {
 		let user_data = proboards.plugin.keys.data[this.enums.PLUGIN_KEY];
 
 		for(let [key, value] of Object.entries(user_data)){
-			let id = parseInt(key, 10);
+			let id = parseInt(key, 10) || 0;
 
-			if(!this._KEY_DATA.has(id)){
+			if(id && !this._KEY_DATA.has(id)){
 				this._KEY_DATA.set(id, new monetary.user_data(id, value));
 			}
 		}
-	}
-
-	static data(user_id = 0){
-		return monetary.api.data(user_id);
 	}
 
 }
@@ -201,6 +201,8 @@ monetary.user_data = class {
 			[monetary.enums.DATA_KEYS.RANK]: parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1,
 			[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID]: parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0,
 			[monetary.enums.DATA_KEYS.BIRTHDAY_PAID]: parseInt(data[monetary.enums.DATA_KEYS.BIRTHDAY_PAID], 10) || 0,
+			[monetary.enums.DATA_KEYS.WAGE_POSTS]: parseInt(data[monetary.enums.DATA_KEYS.WAGE_POSTS], 10) || 0,
+			[monetary.enums.DATA_KEYS.WAGE_EXPIRY]: parseInt(data[monetary.enums.DATA_KEYS.WAGE_EXPIRY], 10) || 0,
 
 		});
 	}
@@ -309,22 +311,10 @@ monetary.utils = class {
 monetary.settings = class {
 
 	static init(){
-		this._amounts = Object.assign(Object.create(null), {
-
-			new_thread: 50,
-			new_poll: 10,
-			new_post: 25
-
-		});
-
-		this._group_amounts = new Map();
-		this._board_amounts = new Map();
-		this._category_amounts = new Map();
+		this.setup();
 	}
 
 	static setup(){
-		this.init();
-
 		let plugin = pb.plugin.get(monetary.enums.PLUGIN_ID);
 
 		if(plugin){
@@ -345,76 +335,17 @@ monetary.settings = class {
 				this._currency_separator_space = !! ~~ settings.currency_separator_space;
 				this._currency_delimiter = settings.currency_delimiter;
 
-				// Profile settings
-
-				this._profile_show_money = !! ~~ settings.profile_show_money;
-				this._profile_new_content_box = !! ~~ settings.profile_new_cbox;
-
-				// Mini profile settings
-
-				this._mini_profile_show_money = !! ~~ settings.mini_profile_show_money;
-
 				// Permissions
 
 				this._members_who_can_edit = settings.members_who_can_edit;
 				this._categories_can_not_earn = settings.categories_can_not_earn;
-				this._boards_can_not_earn = settings.boards_can_not_earn;
-
-				// Earning amounts
-
-				this._amounts.new_post = parseFloat(settings.new_post) || 0;
-				this._amounts.new_thread = parseFloat(settings.new_thread) || 0;
-				this._amounts.new_poll = parseFloat(settings.new_poll) || 0;
-
-				// Group earning amounts
-
-				for(let grp_af of settings.group_amounts){
-					let grp_amounts = Object.create(null);
-
-					grp_amounts.new_post = parseFloat(grp_af.new_post) || 0;
-					grp_amounts.new_thread = parseFloat(grp_af.new_thread) || 0;
-					grp_amounts.new_poll = parseFloat(grp_af.new_poll) || 0;
-
-					for(let grp of grp_af.groups){
-						this._group_amounts.set(parseInt(grp, 10), grp_amounts);
-					}
-				}
-
-				// Board earning amounts
-
-				for(let brd_af of settings.board_amounts){
-					let brd_amounts = Object.create(null);
-
-					brd_amounts.new_post = parseFloat(brd_af.new_post) || 0;
-					brd_amounts.new_thread = parseFloat(brd_af.new_thread) || 0;
-					brd_amounts.new_poll = parseFloat(brd_af.new_poll) || 0;
-
-					for(let brd of brd_af.boards){
-						this._board_amounts.set(parseInt(brd, 10), brd_amounts);
-					}
-				}
-
-				// Category earning amounts
-
-				for(let cat_af of settings.category_amounts){
-					let cat_amounts = Object.create(null);
-
-					cat_amounts.new_post = parseFloat(cat_af.new_post) || 0;
-					cat_amounts.new_thread = parseFloat(cat_af.new_thread) || 0;
-					cat_amounts.new_poll = parseFloat(cat_af.new_poll) || 0;
-
-					for(let cat of cat_af.categories){
-						this._category_amounts.set(parseInt(cat, 10), cat_amounts);
-					}
-				}
+				this._boards_can_not_earn = settings.boards_can_not_earn;				
 			}
 
 			if(plugin.images){
 				this._images = plugin.images;
 			}
 		}
-
-		//Object.freeze(this._amounts);
 	}
 
 	static get images(){
@@ -453,14 +384,6 @@ monetary.settings = class {
 		return this._currency_delimiter;
 	}
 
-	static get profile_show_money(){
-		return this._profile_show_money;
-	}
-
-	static get profile_new_content_box(){
-		return this._profile_new_content_box;
-	}
-
 	static get members_who_can_edit(){
 		return this._members_who_can_edit;
 	}
@@ -471,50 +394,6 @@ monetary.settings = class {
 
 	static get boards_can_not_earn(){
 		return this._boards_can_not_earn;
-	}
-
-	static get mini_profile_show_money(){
-		return this._mini_profile_show_money;
-	}
-
-	static get group_amounts(){
-		return this._group_amounts;
-	}
-
-	static get board_amounts(){
-		return this._board_amounts;
-	}
-
-	static get category_amounts(){
-		return this._category_amounts;
-	}
-
-	static earning_amounts(){
-		let group_ids = yootil.user.group_ids();
-		let board_id = yootil.page.board.id();
-		let category_id = yootil.page.category.id();
-
-		if(group_ids.length && this._group_amounts.size){
-			for(let grp_id of group_ids){
-				if(this._group_amounts.has(parseInt(grp_id, 10))){
-					return this._group_amounts.get(parseInt(grp_id, 10));
-				}
-			}
-		}
-
-		if(board_id && this._board_amounts.size){
-			if(this._board_amounts.has(parseInt(board_id, 10))){
-				return this._board_amounts.get(parseInt(board_id, 10));
-			}
-		}
-
-		if(category_id && this._category_amounts.size){
-			if(this._category_amounts.has(parseInt(category_id, 10))){
-				return this._category_amounts.get(parseInt(category_id, 10));
-			}
-		}
-
-		return this._amounts;	
 	}
 
 };
@@ -633,6 +512,14 @@ monetary.api = class {
 			
 			birthday_paid(){
 				return user_data.get(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
+			},
+
+			wage_posts(){
+				return user_data.get(monetary.enums.DATA_KEYS.WAGE_POSTS);
+			},
+
+			wage_expiry(){
+				return user_data.get(monetary.enums.DATA_KEYS.WAGE_EXPIRY);
 			}
 
 		};
@@ -656,7 +543,7 @@ monetary.api = class {
 			},
 
 			rank(rank = 0){
-				return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(rank, 10));
+				return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(rank, 10) || 1);
 			},
 
 			new_member_paid(){
@@ -665,6 +552,14 @@ monetary.api = class {
 
 			birthday_paid(){
 				return user_data.set(monetary.enums.DATA_KEYS.BIRTHDAY_PAID, (new Date().getFullYear()));
+			},
+
+			wage_expiry(expiry = 0){
+				return user_data.set(monetary.enums.DATA_KEYS.WAGE_EXPIRY, expiry);
+			},
+
+			wage_posts(posts = 0){
+				return user_data.set(monetary.enums.DATA_KEYS.WAGE_POSTS, posts);
 			}
 
 		};
@@ -729,6 +624,14 @@ monetary.api = class {
 
 			birthday_paid(){
 				return user_data.clear(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
+			},
+
+			wage_expiry(){
+				return user_data.clear(monetary.enums.DATA_KEYS.WAGE_EXPIRY);
+			},
+
+			wage_posts(){
+				return user_data.clear(monetary.enums.DATA_KEYS.WAGE_POSTS);
 			}
 
 		};
@@ -840,7 +743,10 @@ monetary.sync_handler = class {
 monetary.profile = class {
 
 	static init(){
-		if(!monetary.settings.profile_show_money || !yootil.location.profile_home() || !yootil.page.member.exists()){
+		this.settings = Object.create(null);
+		this.setup();
+		
+		if(!this.settings.show_money || !yootil.location.profile_home() || !yootil.page.member.exists()){
 			return;
 		}
 
@@ -851,6 +757,15 @@ monetary.profile = class {
 		this._money_elem = null;
 
 		$(this.ready.bind(this));
+	}
+	
+	static setup(){
+		if(monetary.SETTINGS){
+			let settings = monetary.SETTINGS;
+
+			this.settings.show_money = !! ~~ settings.profile_show_money;
+			this.settings.new_content_box = !! ~~ settings.profile_new_cbox;
+		}	
 	}
 
 	static ready(){
@@ -879,7 +794,7 @@ monetary.profile = class {
 			$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
 			$custom.html("<span data-monetary-money>" + evt_data.money_str + "</span>");
-		} else if(monetary.settings.profile_new_content_box){
+		} else if(this.settings.new_content_box){
 			this._using_content_box = true;
 			this.create_new_content_box(evt_data);
 		} else {
@@ -1114,12 +1029,23 @@ monetary.profile = class {
 		return this._$money_elem;
 	}
 
+	static get show_money(){
+		return this.settings.show_money;
+	}
+
+	static get new_content_box(){
+		return this.settings.new_content_box;
+	}
+
 };
 
 monetary.mini_profile = class {
 
 	static init(){
-		if(!monetary.settings.mini_profile_show_money){
+		this.settings = Object.create(null);
+		this.setup();
+
+		if(!this.settings.show_money){
 			return;	
 		}
 		
@@ -1141,6 +1067,14 @@ monetary.mini_profile = class {
 		this._template = undefined;
 
 		$(this.ready.bind(this));
+	}
+
+	static setup(){
+		if(monetary.SETTINGS){
+			let settings = monetary.SETTINGS;
+
+			this.settings.show_money = !! ~~ settings.mini_profile_show_money;
+		}
 	}
 
 	static ready(){
@@ -1169,7 +1103,7 @@ monetary.mini_profile = class {
 			if($user_link.length){
 				let user_id_match = $user_link.attr("href").match(/\/user\/(\d+)\/?/i);
 
-				if(!user_id_match){
+				if(!user_id_match || !parseInt(user_id_match[1], 10)){
 					console.warn("Monetary Mini Profile: Could not match user link.");
 					return;
 				}
@@ -1250,11 +1184,23 @@ monetary.mini_profile = class {
 		return this._initialised;
 	}
 
+	static get show_money(){
+		return this.settings.show_money;
+	}
+
 };
 
 monetary.post = class {
 
 	static init(){
+		this.settings = Object.create(null);
+
+		this.settings.group_amounts = new Map();
+		this.settings.board_amounts = new Map();
+		this.settings.category_amounts = new Map();
+
+		this.setup();
+		
 		if((yootil.location.posting() || yootil.location.thread())){
 			this._initialised = true;
 			this._submitted = false;
@@ -1264,6 +1210,62 @@ monetary.post = class {
 		}
 	}
 
+	static setup(){
+		if(monetary.SETTINGS){
+			let settings = monetary.SETTINGS;
+			
+			// Earning amounts
+
+			this.settings.default_amounts = Object.create(null);
+
+			this.settings.default_amounts.new_post = parseFloat(settings.new_post) || 0;
+			this.settings.default_amounts.new_thread = parseFloat(settings.new_thread) || 0;
+			this.settings.default_amounts.new_poll = parseFloat(settings.new_poll) || 0;
+
+			// Group earning amounts
+
+			for(let grp_af of settings.group_amounts){
+				let grp_amounts = Object.create(null);
+
+				grp_amounts.new_post = parseFloat(grp_af.new_post) || 0;
+				grp_amounts.new_thread = parseFloat(grp_af.new_thread) || 0;
+				grp_amounts.new_poll = parseFloat(grp_af.new_poll) || 0;
+
+				for(let grp of grp_af.groups){
+					this.settings.group_amounts.set(parseInt(grp, 10), grp_amounts);
+				}
+			}
+
+			// Board earning amounts
+
+			for(let brd_af of settings.board_amounts){
+				let brd_amounts = Object.create(null);
+
+				brd_amounts.new_post = parseFloat(brd_af.new_post) || 0;
+				brd_amounts.new_thread = parseFloat(brd_af.new_thread) || 0;
+				brd_amounts.new_poll = parseFloat(brd_af.new_poll) || 0;
+
+				for(let brd of brd_af.boards){
+					this.settings.board_amounts.set(parseInt(brd, 10), brd_amounts);
+				}
+			}
+
+			// Category earning amounts
+
+			for(let cat_af of settings.category_amounts){
+				let cat_amounts = Object.create(null);
+
+				cat_amounts.new_post = parseFloat(cat_af.new_post) || 0;
+				cat_amounts.new_thread = parseFloat(cat_af.new_thread) || 0;
+				cat_amounts.new_poll = parseFloat(cat_af.new_poll) || 0;
+
+				for(let cat of cat_af.categories){
+					this.settings.category_amounts.set(parseInt(cat, 10), cat_amounts);
+				}
+			}
+		}	
+	}
+	
 	static ready(){
 		this._new_thread = (yootil.location.posting_thread())? true : false;
 		this._new_post = (!this._new_thread)? true : false;
@@ -1291,7 +1293,7 @@ monetary.post = class {
 		let evt_data = Object.create(null);
 
 		evt_data.user_id = yootil.user.id();
-		evt_data.amounts = monetary.settings.earning_amounts();
+		evt_data.amounts = this.earning_amounts();
 		evt_data.add = 0;
 		evt_data.remove = 0;
 		evt_data.category_can_earn = monetary.permissions.can_earn_in_category();
@@ -1368,6 +1370,46 @@ monetary.post = class {
 
 	static get has_poll(){
 		return this._poll;
+	}
+
+	static get group_amounts(){
+		return this.settings.group_amounts;
+	}
+
+	static get board_amounts(){
+		return this.settings.board_amounts;
+	}
+
+	static get category_amounts(){
+		return this.settings.category_amounts;
+	}
+
+	static earning_amounts(){
+		let group_ids = yootil.user.group_ids();
+		let board_id = yootil.page.board.id();
+		let category_id = yootil.page.category.id();
+
+		if(group_ids.length && this.settings.group_amounts.size){
+			for(let grp_id of group_ids){
+				if(this.settings.group_amounts.has(parseInt(grp_id, 10))){
+					return this.settings.group_amounts.get(parseInt(grp_id, 10));
+				}
+			}
+		}
+
+		if(board_id && this.settings.board_amounts.size){
+			if(this.settings.board_amounts.has(parseInt(board_id, 10))){
+				return this.settings.board_amounts.get(parseInt(board_id, 10));
+			}
+		}
+
+		if(category_id && this.settings.category_amounts.size){
+			if(this.settings.category_amounts.has(parseInt(category_id, 10))){
+				return this.settings.category_amounts.get(parseInt(category_id, 10));
+			}
+		}
+
+		return this.settings.default_amounts;
 	}
 
 };
@@ -1480,7 +1522,6 @@ monetary.new_member = class {
 		let evt_data = Object.create(null);
 
 		evt_data.user_id = yootil.user.id();
-		evt_data.money = monetary.api.get(evt_data.user_id).money();
 		evt_data.old_member = (diff > _48hrs)? true : false;
 		evt_data.difference = diff;
 		evt_data.message = dialog_msg;
@@ -1627,9 +1668,6 @@ monetary.birthday = class {
 			let year = date.getFullYear();
 			let year_paid = monetary.api.get(yootil.user.id()).birthday_paid();
 
-			birthday.day = day;
-			birthday.month = month;
-
 			if(!year_paid || year_paid < year){
 				if(month == birthday.month && day == birthday.day){
 					monetary.api.queue.add(queue =>{
@@ -1648,7 +1686,6 @@ monetary.birthday = class {
 		let evt_data = Object.create(null);
 
 		evt_data.user_id = yootil.user.id();
-		evt_data.money = monetary.api.get(evt_data.user_id).money();
 		evt_data.message = dialog_msg;
 		evt_data.amount = this._amount;
 		evt_data.rejected = false;
@@ -1744,6 +1781,81 @@ monetary.birthday = class {
 
 	static get message(){
 		return this._message;
+	}
+
+};
+
+monetary.wages = class {
+
+	static init(){
+		this.settings = Object.create(null);
+
+		this.settings.group_rules = new Map();
+		this.settings.member_rules = new Map();
+
+		this.setup();
+
+		if(this.settings.enabled && (yootil.location.posting() || yootil.location.thread())){
+			this.check_wage_rules();
+		}
+	}
+
+	static setup(){
+		if(monetary.SETTINGS){
+			let settings = monetary.SETTINGS;
+
+			this.settings.enabled = !! ~~ settings.wages_enabled;
+			this.settings.paid_when = Math.max(1, parseInt(settings.wages_paid_when, 10)) || 1;
+			this.settings.bonus = parseFloat(settings.wages_bonus) || 0;
+
+			// Group earning rules
+
+			for(let grp_af of settings.wages_group_rules){
+				let grp_amounts = Object.create(null);
+
+				grp_amounts.amount = parseFloat(grp_af.amount) || 0;
+				grp_amounts.posts = parseFloat(grp_af.posts) || 0;
+
+				for(let grp of grp_af.groups){
+					this.settings.group_rules.set(parseInt(grp, 10), grp_amounts);
+				}
+			}
+
+			// Member earning rules
+
+			for(let mem_af of settings.wages_member_rules){
+				let mem_amounts = Object.create(null);
+
+				mem_amounts.amount = parseFloat(mem_af.amount) || 0;
+				mem_amounts.posts = parseFloat(mem_af.posts) || 0;
+
+				this.settings.member_rules.set(parseInt(mem_af.posts, 10), mem_amounts);
+			}
+		}
+	}
+
+	static check_wage_rules(){
+
+	}
+
+	static get enabled(){
+		return this.settings.enabled;
+	}
+
+	static get paid_when(){
+		return this.settings.paid_when;
+	}
+
+	static get bonus(){
+		return this.settings.bonus;
+	}
+
+	static get group_rules(){
+		return this.settings.group_rules;
+	}
+
+	static get member_rules(){
+		return this.settings.member_rules;
 	}
 
 };

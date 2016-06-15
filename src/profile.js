@@ -6,7 +6,10 @@
 monetary.profile = class {
 
 	static init(){
-		if(!monetary.settings.profile_show_money || !yootil.location.profile_home() || !yootil.page.member.exists()){
+		this.settings = Object.create(null);
+		this.setup();
+		
+		if(!this.settings.show_money || !yootil.location.profile_home() || !yootil.page.member.exists()){
 			return;
 		}
 
@@ -17,6 +20,15 @@ monetary.profile = class {
 		this._money_elem = null;
 
 		$(this.ready.bind(this));
+	}
+	
+	static setup(){
+		if(monetary.SETTINGS){
+			let settings = monetary.SETTINGS;
+
+			this.settings.show_money = !! ~~ settings.profile_show_money;
+			this.settings.new_content_box = !! ~~ settings.profile_new_cbox;
+		}	
 	}
 
 	static ready(){
@@ -45,7 +57,7 @@ monetary.profile = class {
 			$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
 			$custom.html("<span data-monetary-money>" + evt_data.money_str + "</span>");
-		} else if(monetary.settings.profile_new_content_box){
+		} else if(this.settings.new_content_box){
 			this._using_content_box = true;
 			this.create_new_content_box(evt_data);
 		} else {
@@ -278,6 +290,14 @@ monetary.profile = class {
 
 	static get money_elem(){
 		return this._$money_elem;
+	}
+
+	static get show_money(){
+		return this.settings.show_money;
+	}
+
+	static get new_content_box(){
+		return this.settings.new_content_box;
 	}
 
 };

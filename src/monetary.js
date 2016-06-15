@@ -30,7 +30,10 @@ class monetary {
 				MONEY: "m",
 				RANK: "rnk",
 				NEW_MEMBER_PAID: "nmp",
-				BIRTHDAY_PAID: "bd"
+				BIRTHDAY_PAID: "bd",
+
+				WAGE_POSTS: "wp",
+				WAGE_EXPIRY: "we"
 
 			})
 
@@ -44,7 +47,7 @@ class monetary {
 
 		this._KEY_DATA = new Map();
 
-		this.settings.setup();
+		this.settings.init();
 		this.setup_data();
 
 		// Extension pre inits
@@ -81,6 +84,7 @@ class monetary {
 		if(yootil.user.logged_in()){
 			this.post.init();
 			this.rank_up.init();
+			this.wages.init();
 			this.new_member.init();
 			this.birthday.init();
 		}
@@ -151,16 +155,12 @@ class monetary {
 		let user_data = proboards.plugin.keys.data[this.enums.PLUGIN_KEY];
 
 		for(let [key, value] of Object.entries(user_data)){
-			let id = parseInt(key, 10);
+			let id = parseInt(key, 10) || 0;
 
-			if(!this._KEY_DATA.has(id)){
+			if(id && !this._KEY_DATA.has(id)){
 				this._KEY_DATA.set(id, new monetary.user_data(id, value));
 			}
 		}
-	}
-
-	static data(user_id = 0){
-		return monetary.api.data(user_id);
 	}
 
 }

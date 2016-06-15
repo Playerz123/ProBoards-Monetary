@@ -8,6 +8,8 @@ monetary.user_data = class {
 			[monetary.enums.DATA_KEYS.RANK]: parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1,
 			[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID]: parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0,
 			[monetary.enums.DATA_KEYS.BIRTHDAY_PAID]: parseInt(data[monetary.enums.DATA_KEYS.BIRTHDAY_PAID], 10) || 0,
+			[monetary.enums.DATA_KEYS.WAGE_POSTS]: parseInt(data[monetary.enums.DATA_KEYS.WAGE_POSTS], 10) || 0,
+			[monetary.enums.DATA_KEYS.WAGE_EXPIRY]: parseInt(data[monetary.enums.DATA_KEYS.WAGE_EXPIRY], 10) || 0,
 
 		});
 	}

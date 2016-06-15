@@ -1,7 +1,10 @@
 monetary.mini_profile = class {
 
 	static init(){
-		if(!monetary.settings.mini_profile_show_money){
+		this.settings = Object.create(null);
+		this.setup();
+
+		if(!this.settings.show_money){
 			return;	
 		}
 		
@@ -23,6 +26,14 @@ monetary.mini_profile = class {
 		this._template = undefined;
 
 		$(this.ready.bind(this));
+	}
+
+	static setup(){
+		if(monetary.SETTINGS){
+			let settings = monetary.SETTINGS;
+
+			this.settings.show_money = !! ~~ settings.mini_profile_show_money;
+		}
 	}
 
 	static ready(){
@@ -51,7 +62,7 @@ monetary.mini_profile = class {
 			if($user_link.length){
 				let user_id_match = $user_link.attr("href").match(/\/user\/(\d+)\/?/i);
 
-				if(!user_id_match){
+				if(!user_id_match || !parseInt(user_id_match[1], 10)){
 					console.warn("Monetary Mini Profile: Could not match user link.");
 					return;
 				}
@@ -130,6 +141,10 @@ monetary.mini_profile = class {
 
 	static get initialised(){
 		return this._initialised;
+	}
+
+	static get show_money(){
+		return this.settings.show_money;
 	}
 
 };

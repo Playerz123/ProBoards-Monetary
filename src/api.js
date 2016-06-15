@@ -55,6 +55,14 @@ monetary.api = class {
 			
 			birthday_paid(){
 				return user_data.get(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
+			},
+
+			wage_posts(){
+				return user_data.get(monetary.enums.DATA_KEYS.WAGE_POSTS);
+			},
+
+			wage_expiry(){
+				return user_data.get(monetary.enums.DATA_KEYS.WAGE_EXPIRY);
 			}
 
 		};
@@ -78,7 +86,7 @@ monetary.api = class {
 			},
 
 			rank(rank = 0){
-				return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(rank, 10));
+				return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(rank, 10) || 1);
 			},
 
 			new_member_paid(){
@@ -87,6 +95,14 @@ monetary.api = class {
 
 			birthday_paid(){
 				return user_data.set(monetary.enums.DATA_KEYS.BIRTHDAY_PAID, (new Date().getFullYear()));
+			},
+
+			wage_expiry(expiry = 0){
+				return user_data.set(monetary.enums.DATA_KEYS.WAGE_EXPIRY, expiry);
+			},
+
+			wage_posts(posts = 0){
+				return user_data.set(monetary.enums.DATA_KEYS.WAGE_POSTS, posts);
 			}
 
 		};
@@ -151,6 +167,14 @@ monetary.api = class {
 
 			birthday_paid(){
 				return user_data.clear(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
+			},
+
+			wage_expiry(){
+				return user_data.clear(monetary.enums.DATA_KEYS.WAGE_EXPIRY);
+			},
+
+			wage_posts(){
+				return user_data.clear(monetary.enums.DATA_KEYS.WAGE_POSTS);
 			}
 
 		};

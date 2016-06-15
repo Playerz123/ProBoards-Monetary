@@ -71,7 +71,10 @@ var monetary = function () {
 					MONEY: "m",
 					RANK: "rnk",
 					NEW_MEMBER_PAID: "nmp",
-					BIRTHDAY_PAID: "bd"
+					BIRTHDAY_PAID: "bd",
+
+					WAGE_POSTS: "wp",
+					WAGE_EXPIRY: "we"
 
 				})
 
@@ -85,7 +88,7 @@ var monetary = function () {
 
 			this._KEY_DATA = new Map();
 
-			this.settings.setup();
+			this.settings.init();
 			this.setup_data();
 
 			// Extension pre inits
@@ -123,6 +126,7 @@ var monetary = function () {
 			if (yootil.user.logged_in()) {
 				this.post.init();
 				this.rank_up.init();
+				this.wages.init();
 				this.new_member.init();
 				this.birthday.init();
 			}
@@ -164,9 +168,9 @@ var monetary = function () {
 					var key = _step$value[0];
 					var value = _step$value[1];
 
-					var id = parseInt(key, 10);
+					var id = parseInt(key, 10) || 0;
 
-					if (!this._KEY_DATA.has(id)) {
+					if (id && !this._KEY_DATA.has(id)) {
 						this._KEY_DATA.set(id, new monetary.user_data(id, value));
 					}
 				}
@@ -184,13 +188,6 @@ var monetary = function () {
 					}
 				}
 			}
-		}
-	}, {
-		key: "data",
-		value: function data() {
-			var user_id = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
-
-			return monetary.api.data(user_id);
 		}
 	}, {
 		key: "PLUGIN_ID",
@@ -255,7 +252,7 @@ monetary.user_data = function () {
 		_classCallCheck(this, _class);
 
 		this._id = user_id;
-		this._DATA = Object.assign(Object.create(null), (_Object$assign = {}, _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.MONEY, parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.RANK, parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.BIRTHDAY_PAID, parseInt(data[monetary.enums.DATA_KEYS.BIRTHDAY_PAID], 10) || 0), _Object$assign));
+		this._DATA = Object.assign(Object.create(null), (_Object$assign = {}, _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.MONEY, parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.RANK, parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.BIRTHDAY_PAID, parseInt(data[monetary.enums.DATA_KEYS.BIRTHDAY_PAID], 10) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.WAGE_POSTS, parseInt(data[monetary.enums.DATA_KEYS.WAGE_POSTS], 10) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.WAGE_EXPIRY, parseInt(data[monetary.enums.DATA_KEYS.WAGE_EXPIRY], 10) || 0), _Object$assign));
 	}
 
 	_createClass(_class, [{
@@ -400,23 +397,11 @@ monetary.settings = function () {
 	_createClass(_class3, null, [{
 		key: "init",
 		value: function init() {
-			this._amounts = Object.assign(Object.create(null), {
-
-				new_thread: 50,
-				new_poll: 10,
-				new_post: 25
-
-			});
-
-			this._group_amounts = new Map();
-			this._board_amounts = new Map();
-			this._category_amounts = new Map();
+			this.setup();
 		}
 	}, {
 		key: "setup",
 		value: function setup() {
-			this.init();
-
 			var plugin = pb.plugin.get(monetary.enums.PLUGIN_ID);
 
 			if (plugin) {
@@ -437,252 +422,17 @@ monetary.settings = function () {
 					this._currency_separator_space = !! ~ ~settings.currency_separator_space;
 					this._currency_delimiter = settings.currency_delimiter;
 
-					// Profile settings
-
-					this._profile_show_money = !! ~ ~settings.profile_show_money;
-					this._profile_new_content_box = !! ~ ~settings.profile_new_cbox;
-
-					// Mini profile settings
-
-					this._mini_profile_show_money = !! ~ ~settings.mini_profile_show_money;
-
 					// Permissions
 
 					this._members_who_can_edit = settings.members_who_can_edit;
 					this._categories_can_not_earn = settings.categories_can_not_earn;
 					this._boards_can_not_earn = settings.boards_can_not_earn;
-
-					// Earning amounts
-
-					this._amounts.new_post = parseFloat(settings.new_post) || 0;
-					this._amounts.new_thread = parseFloat(settings.new_thread) || 0;
-					this._amounts.new_poll = parseFloat(settings.new_poll) || 0;
-
-					// Group earning amounts
-
-					var _iteratorNormalCompletion2 = true;
-					var _didIteratorError2 = false;
-					var _iteratorError2 = undefined;
-
-					try {
-						for (var _iterator2 = settings.group_amounts[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
-							var grp_af = _step2.value;
-
-							var grp_amounts = Object.create(null);
-
-							grp_amounts.new_post = parseFloat(grp_af.new_post) || 0;
-							grp_amounts.new_thread = parseFloat(grp_af.new_thread) || 0;
-							grp_amounts.new_poll = parseFloat(grp_af.new_poll) || 0;
-
-							var _iteratorNormalCompletion5 = true;
-							var _didIteratorError5 = false;
-							var _iteratorError5 = undefined;
-
-							try {
-								for (var _iterator5 = grp_af.groups[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
-									var grp = _step5.value;
-
-									this._group_amounts.set(parseInt(grp, 10), grp_amounts);
-								}
-							} catch (err) {
-								_didIteratorError5 = true;
-								_iteratorError5 = err;
-							} finally {
-								try {
-									if (!_iteratorNormalCompletion5 && _iterator5.return) {
-										_iterator5.return();
-									}
-								} finally {
-									if (_didIteratorError5) {
-										throw _iteratorError5;
-									}
-								}
-							}
-						}
-
-						// Board earning amounts
-					} catch (err) {
-						_didIteratorError2 = true;
-						_iteratorError2 = err;
-					} finally {
-						try {
-							if (!_iteratorNormalCompletion2 && _iterator2.return) {
-								_iterator2.return();
-							}
-						} finally {
-							if (_didIteratorError2) {
-								throw _iteratorError2;
-							}
-						}
-					}
-
-					var _iteratorNormalCompletion3 = true;
-					var _didIteratorError3 = false;
-					var _iteratorError3 = undefined;
-
-					try {
-						for (var _iterator3 = settings.board_amounts[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
-							var brd_af = _step3.value;
-
-							var brd_amounts = Object.create(null);
-
-							brd_amounts.new_post = parseFloat(brd_af.new_post) || 0;
-							brd_amounts.new_thread = parseFloat(brd_af.new_thread) || 0;
-							brd_amounts.new_poll = parseFloat(brd_af.new_poll) || 0;
-
-							var _iteratorNormalCompletion6 = true;
-							var _didIteratorError6 = false;
-							var _iteratorError6 = undefined;
-
-							try {
-								for (var _iterator6 = brd_af.boards[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
-									var brd = _step6.value;
-
-									this._board_amounts.set(parseInt(brd, 10), brd_amounts);
-								}
-							} catch (err) {
-								_didIteratorError6 = true;
-								_iteratorError6 = err;
-							} finally {
-								try {
-									if (!_iteratorNormalCompletion6 && _iterator6.return) {
-										_iterator6.return();
-									}
-								} finally {
-									if (_didIteratorError6) {
-										throw _iteratorError6;
-									}
-								}
-							}
-						}
-
-						// Category earning amounts
-					} catch (err) {
-						_didIteratorError3 = true;
-						_iteratorError3 = err;
-					} finally {
-						try {
-							if (!_iteratorNormalCompletion3 && _iterator3.return) {
-								_iterator3.return();
-							}
-						} finally {
-							if (_didIteratorError3) {
-								throw _iteratorError3;
-							}
-						}
-					}
-
-					var _iteratorNormalCompletion4 = true;
-					var _didIteratorError4 = false;
-					var _iteratorError4 = undefined;
-
-					try {
-						for (var _iterator4 = settings.category_amounts[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
-							var cat_af = _step4.value;
-
-							var cat_amounts = Object.create(null);
-
-							cat_amounts.new_post = parseFloat(cat_af.new_post) || 0;
-							cat_amounts.new_thread = parseFloat(cat_af.new_thread) || 0;
-							cat_amounts.new_poll = parseFloat(cat_af.new_poll) || 0;
-
-							var _iteratorNormalCompletion7 = true;
-							var _didIteratorError7 = false;
-							var _iteratorError7 = undefined;
-
-							try {
-								for (var _iterator7 = cat_af.categories[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
-									var cat = _step7.value;
-
-									this._category_amounts.set(parseInt(cat, 10), cat_amounts);
-								}
-							} catch (err) {
-								_didIteratorError7 = true;
-								_iteratorError7 = err;
-							} finally {
-								try {
-									if (!_iteratorNormalCompletion7 && _iterator7.return) {
-										_iterator7.return();
-									}
-								} finally {
-									if (_didIteratorError7) {
-										throw _iteratorError7;
-									}
-								}
-							}
-						}
-					} catch (err) {
-						_didIteratorError4 = true;
-						_iteratorError4 = err;
-					} finally {
-						try {
-							if (!_iteratorNormalCompletion4 && _iterator4.return) {
-								_iterator4.return();
-							}
-						} finally {
-							if (_didIteratorError4) {
-								throw _iteratorError4;
-							}
-						}
-					}
 				}
 
 				if (plugin.images) {
 					this._images = plugin.images;
 				}
 			}
-
-			//Object.freeze(this._amounts);
-		}
-	}, {
-		key: "earning_amounts",
-		value: function earning_amounts() {
-			var group_ids = yootil.user.group_ids();
-			var board_id = yootil.page.board.id();
-			var category_id = yootil.page.category.id();
-
-			if (group_ids.length && this._group_amounts.size) {
-				var _iteratorNormalCompletion8 = true;
-				var _didIteratorError8 = false;
-				var _iteratorError8 = undefined;
-
-				try {
-					for (var _iterator8 = group_ids[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
-						var grp_id = _step8.value;
-
-						if (this._group_amounts.has(parseInt(grp_id, 10))) {
-							return this._group_amounts.get(parseInt(grp_id, 10));
-						}
-					}
-				} catch (err) {
-					_didIteratorError8 = true;
-					_iteratorError8 = err;
-				} finally {
-					try {
-						if (!_iteratorNormalCompletion8 && _iterator8.return) {
-							_iterator8.return();
-						}
-					} finally {
-						if (_didIteratorError8) {
-							throw _iteratorError8;
-						}
-					}
-				}
-			}
-
-			if (board_id && this._board_amounts.size) {
-				if (this._board_amounts.has(parseInt(board_id, 10))) {
-					return this._board_amounts.get(parseInt(board_id, 10));
-				}
-			}
-
-			if (category_id && this._category_amounts.size) {
-				if (this._category_amounts.has(parseInt(category_id, 10))) {
-					return this._category_amounts.get(parseInt(category_id, 10));
-				}
-			}
-
-			return this._amounts;
 		}
 	}, {
 		key: "images",
@@ -730,16 +480,6 @@ monetary.settings = function () {
 			return this._currency_delimiter;
 		}
 	}, {
-		key: "profile_show_money",
-		get: function get() {
-			return this._profile_show_money;
-		}
-	}, {
-		key: "profile_new_content_box",
-		get: function get() {
-			return this._profile_new_content_box;
-		}
-	}, {
 		key: "members_who_can_edit",
 		get: function get() {
 			return this._members_who_can_edit;
@@ -753,26 +493,6 @@ monetary.settings = function () {
 		key: "boards_can_not_earn",
 		get: function get() {
 			return this._boards_can_not_earn;
-		}
-	}, {
-		key: "mini_profile_show_money",
-		get: function get() {
-			return this._mini_profile_show_money;
-		}
-	}, {
-		key: "group_amounts",
-		get: function get() {
-			return this._group_amounts;
-		}
-	}, {
-		key: "board_amounts",
-		get: function get() {
-			return this._board_amounts;
-		}
-	}, {
-		key: "category_amounts",
-		get: function get() {
-			return this._category_amounts;
 		}
 	}]);
 
@@ -918,6 +638,12 @@ monetary.api = function () {
 				},
 				birthday_paid: function birthday_paid() {
 					return user_data.get(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
+				},
+				wage_posts: function wage_posts() {
+					return user_data.get(monetary.enums.DATA_KEYS.WAGE_POSTS);
+				},
+				wage_expiry: function wage_expiry() {
+					return user_data.get(monetary.enums.DATA_KEYS.WAGE_EXPIRY);
 				}
 			};
 		}
@@ -946,13 +672,23 @@ monetary.api = function () {
 				rank: function rank() {
 					var _rank = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
 
-					return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(_rank, 10));
+					return user_data.set(monetary.enums.DATA_KEYS.RANK, parseInt(_rank, 10) || 1);
 				},
 				new_member_paid: function new_member_paid() {
 					return user_data.set(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, 1);
 				},
 				birthday_paid: function birthday_paid() {
 					return user_data.set(monetary.enums.DATA_KEYS.BIRTHDAY_PAID, new Date().getFullYear());
+				},
+				wage_expiry: function wage_expiry() {
+					var expiry = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
+
+					return user_data.set(monetary.enums.DATA_KEYS.WAGE_EXPIRY, expiry);
+				},
+				wage_posts: function wage_posts() {
+					var posts = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
+
+					return user_data.set(monetary.enums.DATA_KEYS.WAGE_POSTS, posts);
 				}
 			};
 		}
@@ -1021,6 +757,12 @@ monetary.api = function () {
 				},
 				birthday_paid: function birthday_paid() {
 					return user_data.clear(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
+				},
+				wage_expiry: function wage_expiry() {
+					return user_data.clear(monetary.enums.DATA_KEYS.WAGE_EXPIRY);
+				},
+				wage_posts: function wage_posts() {
+					return user_data.clear(monetary.enums.DATA_KEYS.WAGE_POSTS);
 				}
 			};
 		}
@@ -1164,7 +906,10 @@ monetary.profile = function () {
 	_createClass(_class7, null, [{
 		key: "init",
 		value: function init() {
-			if (!monetary.settings.profile_show_money || !yootil.location.profile_home() || !yootil.page.member.exists()) {
+			this.settings = Object.create(null);
+			this.setup();
+
+			if (!this.settings.show_money || !yootil.location.profile_home() || !yootil.page.member.exists()) {
 				return;
 			}
 
@@ -1175,6 +920,16 @@ monetary.profile = function () {
 			this._money_elem = null;
 
 			$(this.ready.bind(this));
+		}
+	}, {
+		key: "setup",
+		value: function setup() {
+			if (monetary.SETTINGS) {
+				var settings = monetary.SETTINGS;
+
+				this.settings.show_money = !! ~ ~settings.profile_show_money;
+				this.settings.new_content_box = !! ~ ~settings.profile_new_cbox;
+			}
 		}
 	}, {
 		key: "ready",
@@ -1205,7 +960,7 @@ monetary.profile = function () {
 				$(monetary.api.events).trigger("monetary.before_money_shown", evt_data);
 
 				$custom.html("<span data-monetary-money>" + evt_data.money_str + "</span>");
-			} else if (monetary.settings.profile_new_content_box) {
+			} else if (this.settings.new_content_box) {
 				this._using_content_box = true;
 				this.create_new_content_box(evt_data);
 			} else {
@@ -1483,6 +1238,16 @@ monetary.profile = function () {
 		get: function get() {
 			return this._$money_elem;
 		}
+	}, {
+		key: "show_money",
+		get: function get() {
+			return this.settings.show_money;
+		}
+	}, {
+		key: "new_content_box",
+		get: function get() {
+			return this.settings.new_content_box;
+		}
 	}]);
 
 	return _class7;
@@ -1496,7 +1261,10 @@ monetary.mini_profile = function () {
 	_createClass(_class8, null, [{
 		key: "init",
 		value: function init() {
-			if (!monetary.settings.mini_profile_show_money) {
+			this.settings = Object.create(null);
+			this.setup();
+
+			if (!this.settings.show_money) {
 				return;
 			}
 
@@ -1511,6 +1279,15 @@ monetary.mini_profile = function () {
 			this._template = undefined;
 
 			$(this.ready.bind(this));
+		}
+	}, {
+		key: "setup",
+		value: function setup() {
+			if (monetary.SETTINGS) {
+				var settings = monetary.SETTINGS;
+
+				this.settings.show_money = !! ~ ~settings.mini_profile_show_money;
+			}
 		}
 	}, {
 		key: "ready",
@@ -1543,7 +1320,7 @@ monetary.mini_profile = function () {
 				if ($user_link.length) {
 					var user_id_match = $user_link.attr("href").match(/\/user\/(\d+)\/?/i);
 
-					if (!user_id_match) {
+					if (!user_id_match || !parseInt(user_id_match[1], 10)) {
 						console.warn("Monetary Mini Profile: Could not match user link.");
 						return;
 					}
@@ -1628,6 +1405,11 @@ monetary.mini_profile = function () {
 		get: function get() {
 			return this._initialised;
 		}
+	}, {
+		key: "show_money",
+		get: function get() {
+			return this.settings.show_money;
+		}
 	}]);
 
 	return _class8;
@@ -1641,12 +1423,203 @@ monetary.post = function () {
 	_createClass(_class9, null, [{
 		key: "init",
 		value: function init() {
+			this.settings = Object.create(null);
+
+			this.settings.group_amounts = new Map();
+			this.settings.board_amounts = new Map();
+			this.settings.category_amounts = new Map();
+
+			this.setup();
+
 			if (yootil.location.posting() || yootil.location.thread()) {
 				this._initialised = true;
 				this._submitted = false;
 				this._hook = "";
 
 				$(this.ready.bind(this));
+			}
+		}
+	}, {
+		key: "setup",
+		value: function setup() {
+			if (monetary.SETTINGS) {
+				var settings = monetary.SETTINGS;
+
+				// Earning amounts
+
+				this.settings.default_amounts = Object.create(null);
+
+				this.settings.default_amounts.new_post = parseFloat(settings.new_post) || 0;
+				this.settings.default_amounts.new_thread = parseFloat(settings.new_thread) || 0;
+				this.settings.default_amounts.new_poll = parseFloat(settings.new_poll) || 0;
+
+				// Group earning amounts
+
+				var _iteratorNormalCompletion2 = true;
+				var _didIteratorError2 = false;
+				var _iteratorError2 = undefined;
+
+				try {
+					for (var _iterator2 = settings.group_amounts[Symbol.iterator](), _step2; !(_iteratorNormalCompletion2 = (_step2 = _iterator2.next()).done); _iteratorNormalCompletion2 = true) {
+						var grp_af = _step2.value;
+
+						var grp_amounts = Object.create(null);
+
+						grp_amounts.new_post = parseFloat(grp_af.new_post) || 0;
+						grp_amounts.new_thread = parseFloat(grp_af.new_thread) || 0;
+						grp_amounts.new_poll = parseFloat(grp_af.new_poll) || 0;
+
+						var _iteratorNormalCompletion5 = true;
+						var _didIteratorError5 = false;
+						var _iteratorError5 = undefined;
+
+						try {
+							for (var _iterator5 = grp_af.groups[Symbol.iterator](), _step5; !(_iteratorNormalCompletion5 = (_step5 = _iterator5.next()).done); _iteratorNormalCompletion5 = true) {
+								var grp = _step5.value;
+
+								this.settings.group_amounts.set(parseInt(grp, 10), grp_amounts);
+							}
+						} catch (err) {
+							_didIteratorError5 = true;
+							_iteratorError5 = err;
+						} finally {
+							try {
+								if (!_iteratorNormalCompletion5 && _iterator5.return) {
+									_iterator5.return();
+								}
+							} finally {
+								if (_didIteratorError5) {
+									throw _iteratorError5;
+								}
+							}
+						}
+					}
+
+					// Board earning amounts
+				} catch (err) {
+					_didIteratorError2 = true;
+					_iteratorError2 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion2 && _iterator2.return) {
+							_iterator2.return();
+						}
+					} finally {
+						if (_didIteratorError2) {
+							throw _iteratorError2;
+						}
+					}
+				}
+
+				var _iteratorNormalCompletion3 = true;
+				var _didIteratorError3 = false;
+				var _iteratorError3 = undefined;
+
+				try {
+					for (var _iterator3 = settings.board_amounts[Symbol.iterator](), _step3; !(_iteratorNormalCompletion3 = (_step3 = _iterator3.next()).done); _iteratorNormalCompletion3 = true) {
+						var brd_af = _step3.value;
+
+						var brd_amounts = Object.create(null);
+
+						brd_amounts.new_post = parseFloat(brd_af.new_post) || 0;
+						brd_amounts.new_thread = parseFloat(brd_af.new_thread) || 0;
+						brd_amounts.new_poll = parseFloat(brd_af.new_poll) || 0;
+
+						var _iteratorNormalCompletion6 = true;
+						var _didIteratorError6 = false;
+						var _iteratorError6 = undefined;
+
+						try {
+							for (var _iterator6 = brd_af.boards[Symbol.iterator](), _step6; !(_iteratorNormalCompletion6 = (_step6 = _iterator6.next()).done); _iteratorNormalCompletion6 = true) {
+								var brd = _step6.value;
+
+								this.settings.board_amounts.set(parseInt(brd, 10), brd_amounts);
+							}
+						} catch (err) {
+							_didIteratorError6 = true;
+							_iteratorError6 = err;
+						} finally {
+							try {
+								if (!_iteratorNormalCompletion6 && _iterator6.return) {
+									_iterator6.return();
+								}
+							} finally {
+								if (_didIteratorError6) {
+									throw _iteratorError6;
+								}
+							}
+						}
+					}
+
+					// Category earning amounts
+				} catch (err) {
+					_didIteratorError3 = true;
+					_iteratorError3 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion3 && _iterator3.return) {
+							_iterator3.return();
+						}
+					} finally {
+						if (_didIteratorError3) {
+							throw _iteratorError3;
+						}
+					}
+				}
+
+				var _iteratorNormalCompletion4 = true;
+				var _didIteratorError4 = false;
+				var _iteratorError4 = undefined;
+
+				try {
+					for (var _iterator4 = settings.category_amounts[Symbol.iterator](), _step4; !(_iteratorNormalCompletion4 = (_step4 = _iterator4.next()).done); _iteratorNormalCompletion4 = true) {
+						var cat_af = _step4.value;
+
+						var cat_amounts = Object.create(null);
+
+						cat_amounts.new_post = parseFloat(cat_af.new_post) || 0;
+						cat_amounts.new_thread = parseFloat(cat_af.new_thread) || 0;
+						cat_amounts.new_poll = parseFloat(cat_af.new_poll) || 0;
+
+						var _iteratorNormalCompletion7 = true;
+						var _didIteratorError7 = false;
+						var _iteratorError7 = undefined;
+
+						try {
+							for (var _iterator7 = cat_af.categories[Symbol.iterator](), _step7; !(_iteratorNormalCompletion7 = (_step7 = _iterator7.next()).done); _iteratorNormalCompletion7 = true) {
+								var cat = _step7.value;
+
+								this.settings.category_amounts.set(parseInt(cat, 10), cat_amounts);
+							}
+						} catch (err) {
+							_didIteratorError7 = true;
+							_iteratorError7 = err;
+						} finally {
+							try {
+								if (!_iteratorNormalCompletion7 && _iterator7.return) {
+									_iterator7.return();
+								}
+							} finally {
+								if (_didIteratorError7) {
+									throw _iteratorError7;
+								}
+							}
+						}
+					}
+				} catch (err) {
+					_didIteratorError4 = true;
+					_iteratorError4 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion4 && _iterator4.return) {
+							_iterator4.return();
+						}
+					} finally {
+						if (_didIteratorError4) {
+							throw _iteratorError4;
+						}
+					}
+				}
 			}
 		}
 	}, {
@@ -1681,7 +1654,7 @@ monetary.post = function () {
 			var evt_data = Object.create(null);
 
 			evt_data.user_id = yootil.user.id();
-			evt_data.amounts = monetary.settings.earning_amounts();
+			evt_data.amounts = this.earning_amounts();
 			evt_data.add = 0;
 			evt_data.remove = 0;
 			evt_data.category_can_earn = monetary.permissions.can_earn_in_category();
@@ -1740,6 +1713,56 @@ monetary.post = function () {
 			}
 		}
 	}, {
+		key: "earning_amounts",
+		value: function earning_amounts() {
+			var group_ids = yootil.user.group_ids();
+			var board_id = yootil.page.board.id();
+			var category_id = yootil.page.category.id();
+
+			if (group_ids.length && this.settings.group_amounts.size) {
+				var _iteratorNormalCompletion8 = true;
+				var _didIteratorError8 = false;
+				var _iteratorError8 = undefined;
+
+				try {
+					for (var _iterator8 = group_ids[Symbol.iterator](), _step8; !(_iteratorNormalCompletion8 = (_step8 = _iterator8.next()).done); _iteratorNormalCompletion8 = true) {
+						var grp_id = _step8.value;
+
+						if (this.settings.group_amounts.has(parseInt(grp_id, 10))) {
+							return this.settings.group_amounts.get(parseInt(grp_id, 10));
+						}
+					}
+				} catch (err) {
+					_didIteratorError8 = true;
+					_iteratorError8 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion8 && _iterator8.return) {
+							_iterator8.return();
+						}
+					} finally {
+						if (_didIteratorError8) {
+							throw _iteratorError8;
+						}
+					}
+				}
+			}
+
+			if (board_id && this.settings.board_amounts.size) {
+				if (this.settings.board_amounts.has(parseInt(board_id, 10))) {
+					return this.settings.board_amounts.get(parseInt(board_id, 10));
+				}
+			}
+
+			if (category_id && this.settings.category_amounts.size) {
+				if (this.settings.category_amounts.has(parseInt(category_id, 10))) {
+					return this.settings.category_amounts.get(parseInt(category_id, 10));
+				}
+			}
+
+			return this.settings.default_amounts;
+		}
+	}, {
 		key: "initialised",
 		get: function get() {
 			return this._initialised;
@@ -1763,6 +1786,21 @@ monetary.post = function () {
 		key: "has_poll",
 		get: function get() {
 			return this._poll;
+		}
+	}, {
+		key: "group_amounts",
+		get: function get() {
+			return this.settings.group_amounts;
+		}
+	}, {
+		key: "board_amounts",
+		get: function get() {
+			return this.settings.board_amounts;
+		}
+	}, {
+		key: "category_amounts",
+		get: function get() {
+			return this.settings.category_amounts;
 		}
 	}]);
 
@@ -1900,7 +1938,6 @@ monetary.new_member = function () {
 			var evt_data = Object.create(null);
 
 			evt_data.user_id = yootil.user.id();
-			evt_data.money = monetary.api.get(evt_data.user_id).money();
 			evt_data.old_member = diff > _48hrs ? true : false;
 			evt_data.difference = diff;
 			evt_data.message = dialog_msg;
@@ -2066,9 +2103,6 @@ monetary.birthday = function () {
 				var year = date.getFullYear();
 				var year_paid = monetary.api.get(yootil.user.id()).birthday_paid();
 
-				birthday.day = day;
-				birthday.month = month;
-
 				if (!year_paid || year_paid < year) {
 					if (month == birthday.month && day == birthday.day) {
 						monetary.api.queue.add(function (queue) {
@@ -2088,7 +2122,6 @@ monetary.birthday = function () {
 			var evt_data = Object.create(null);
 
 			evt_data.user_id = yootil.user.id();
-			evt_data.money = monetary.api.get(evt_data.user_id).money();
 			evt_data.message = dialog_msg;
 			evt_data.amount = this._amount;
 			evt_data.rejected = false;
@@ -2195,6 +2228,156 @@ monetary.birthday = function () {
 	}]);
 
 	return _class12;
+}();
+
+monetary.wages = function () {
+	function _class13() {
+		_classCallCheck(this, _class13);
+	}
+
+	_createClass(_class13, null, [{
+		key: "init",
+		value: function init() {
+			this.settings = Object.create(null);
+
+			this.settings.group_rules = new Map();
+			this.settings.member_rules = new Map();
+
+			this.setup();
+
+			if (this.settings.enabled && (yootil.location.posting() || yootil.location.thread())) {
+				this.check_wage_rules();
+			}
+		}
+	}, {
+		key: "setup",
+		value: function setup() {
+			if (monetary.SETTINGS) {
+				var settings = monetary.SETTINGS;
+
+				this.settings.enabled = !! ~ ~settings.wages_enabled;
+				this.settings.paid_when = Math.max(1, parseInt(settings.wages_paid_when, 10)) || 1;
+				this.settings.bonus = parseFloat(settings.wages_bonus) || 0;
+
+				// Group earning rules
+
+				var _iteratorNormalCompletion9 = true;
+				var _didIteratorError9 = false;
+				var _iteratorError9 = undefined;
+
+				try {
+					for (var _iterator9 = settings.wages_group_rules[Symbol.iterator](), _step9; !(_iteratorNormalCompletion9 = (_step9 = _iterator9.next()).done); _iteratorNormalCompletion9 = true) {
+						var grp_af = _step9.value;
+
+						var grp_amounts = Object.create(null);
+
+						grp_amounts.amount = parseFloat(grp_af.amount) || 0;
+						grp_amounts.posts = parseFloat(grp_af.posts) || 0;
+
+						var _iteratorNormalCompletion11 = true;
+						var _didIteratorError11 = false;
+						var _iteratorError11 = undefined;
+
+						try {
+							for (var _iterator11 = grp_af.groups[Symbol.iterator](), _step11; !(_iteratorNormalCompletion11 = (_step11 = _iterator11.next()).done); _iteratorNormalCompletion11 = true) {
+								var grp = _step11.value;
+
+								this.settings.group_rules.set(parseInt(grp, 10), grp_amounts);
+							}
+						} catch (err) {
+							_didIteratorError11 = true;
+							_iteratorError11 = err;
+						} finally {
+							try {
+								if (!_iteratorNormalCompletion11 && _iterator11.return) {
+									_iterator11.return();
+								}
+							} finally {
+								if (_didIteratorError11) {
+									throw _iteratorError11;
+								}
+							}
+						}
+					}
+
+					// Member earning rules
+				} catch (err) {
+					_didIteratorError9 = true;
+					_iteratorError9 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion9 && _iterator9.return) {
+							_iterator9.return();
+						}
+					} finally {
+						if (_didIteratorError9) {
+							throw _iteratorError9;
+						}
+					}
+				}
+
+				var _iteratorNormalCompletion10 = true;
+				var _didIteratorError10 = false;
+				var _iteratorError10 = undefined;
+
+				try {
+					for (var _iterator10 = settings.wages_member_rules[Symbol.iterator](), _step10; !(_iteratorNormalCompletion10 = (_step10 = _iterator10.next()).done); _iteratorNormalCompletion10 = true) {
+						var mem_af = _step10.value;
+
+						var mem_amounts = Object.create(null);
+
+						mem_amounts.amount = parseFloat(mem_af.amount) || 0;
+						mem_amounts.posts = parseFloat(mem_af.posts) || 0;
+
+						this.settings.member_rules.set(parseInt(mem_af.posts, 10), mem_amounts);
+					}
+				} catch (err) {
+					_didIteratorError10 = true;
+					_iteratorError10 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion10 && _iterator10.return) {
+							_iterator10.return();
+						}
+					} finally {
+						if (_didIteratorError10) {
+							throw _iteratorError10;
+						}
+					}
+				}
+			}
+		}
+	}, {
+		key: "check_wage_rules",
+		value: function check_wage_rules() {}
+	}, {
+		key: "enabled",
+		get: function get() {
+			return this.settings.enabled;
+		}
+	}, {
+		key: "paid_when",
+		get: function get() {
+			return this.settings.paid_when;
+		}
+	}, {
+		key: "bonus",
+		get: function get() {
+			return this.settings.bonus;
+		}
+	}, {
+		key: "group_rules",
+		get: function get() {
+			return this.settings.group_rules;
+		}
+	}, {
+		key: "member_rules",
+		get: function get() {
+			return this.settings.member_rules;
+		}
+	}]);
+
+	return _class13;
 }();
 
 monetary.init();
