@@ -1,8 +1,9 @@
 monetary.api = class {
 
 	static init(){
-		this.events = Object.create(null);
+		this._events = Object.create(null);
 		this._sync = new yootil.sync(monetary.enums.SYNC_KEY, this.get(yootil.user.id()).data(), monetary.sync_handler);
+		this._queue = new yootil.queue(true);
 	}
 
 	static data(user_id = 0){
@@ -186,6 +187,14 @@ monetary.api = class {
 
 	static clear_all_data(){
 		monetary._KEY_DATA.clear();
+	}
+
+	static get events(){
+		return this._events;
+	}
+
+	static get queue(){
+		return this._queue;
 	}
 
 };

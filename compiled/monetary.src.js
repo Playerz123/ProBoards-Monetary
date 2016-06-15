@@ -576,8 +576,9 @@ monetary.permissions = class {
 monetary.api = class {
 
 	static init(){
-		this.events = Object.create(null);
+		this._events = Object.create(null);
 		this._sync = new yootil.sync(monetary.enums.SYNC_KEY, this.get(yootil.user.id()).data(), monetary.sync_handler);
+		this._queue = new yootil.queue(true);
 	}
 
 	static data(user_id = 0){
@@ -761,6 +762,14 @@ monetary.api = class {
 
 	static clear_all_data(){
 		monetary._KEY_DATA.clear();
+	}
+
+	static get events(){
+		return this._events;
+	}
+
+	static get queue(){
+		return this._queue;
 	}
 
 };
@@ -1411,7 +1420,9 @@ monetary.new_member = class {
 		this.setup();
 
 		if(this._amount && !monetary.api.get(yootil.user.id()).new_member_paid()){
-			this.pay_member();
+			monetary.api.queue.add(queue => {
+				this.pay_member(queue);
+			});
 		}
 	}
 
@@ -1431,7 +1442,7 @@ monetary.new_member = class {
 		}
 	}
 
-	static pay_member(){
+	static pay_member(queue = null){
 		let now = yootil.ts();
 		let registered_on = (yootil.user.registered_on().unix_timestamp * 1000);
 		let diff = now - registered_on;
@@ -1473,22 +1484,26 @@ monetary.new_member = class {
 				buttons: {
 
 					"Reject": function(){
-						pb.window.confirm("Are you sure you want to reject?", () => {
+						pb.window.confirm("Are you sure you want to reject this reward?", () => {
 							evt_data.rejected = true;
 
 							$(monetary.api.events).trigger("monetary.new_member.before_save", evt_data);
 
 							monetary.api.set(evt_data.user_id).new_member_paid();
 
-							monetary.api.save(evt_data.user_id).then(status =>{
+							monetary.api.save(evt_data.user_id).then(status => {
 								$(monetary.api.events).trigger("monetary.new_member.after_save", evt_data);
 
 								monetary.api.sync(evt_data.user_id);
 							}).catch(status =>{
-								console.warn("Monetary Error [New Member - R]", "Could save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+								console.warn("Monetary Error [New Member - R]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
 							});
 
 							$(this).dialog("close");
+
+							if(queue){
+								queue.next();
+							}
 						});
 					},
 
@@ -1507,13 +1522,17 @@ monetary.new_member = class {
 
 							// Manually ran sync handler updates so we can update
 							// possible pages we might be on.
-							
+
 							monetary.sync_handler.update_all();
 						}).catch(status => {
-							console.warn("Monetary Error [New Member - A]", "Could save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+							console.warn("Monetary Error [New Member - A]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
 						});
 
 						$(this).dialog("close");
+
+						if(queue){
+							queue.next();
+						}
 					}
 
 				}

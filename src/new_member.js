@@ -11,7 +11,9 @@ monetary.new_member = class {
 		this.setup();
 
 		if(this._amount && !monetary.api.get(yootil.user.id()).new_member_paid()){
-			this.pay_member();
+			monetary.api.queue.add(queue => {
+				this.pay_member(queue);
+			});
 		}
 	}
 
@@ -31,7 +33,7 @@ monetary.new_member = class {
 		}
 	}
 
-	static pay_member(){
+	static pay_member(queue = null){
 		let now = yootil.ts();
 		let registered_on = (yootil.user.registered_on().unix_timestamp * 1000);
 		let diff = now - registered_on;
@@ -89,6 +91,10 @@ monetary.new_member = class {
 							});
 
 							$(this).dialog("close");
+
+							if(queue){
+								queue.next();
+							}
 						});
 					},
 
@@ -114,6 +120,10 @@ monetary.new_member = class {
 						});
 
 						$(this).dialog("close");
+
+						if(queue){
+							queue.next();
+						}
 					}
 
 				}
