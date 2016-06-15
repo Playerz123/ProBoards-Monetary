@@ -29,7 +29,8 @@ class monetary {
 
 				MONEY: "m",
 				RANK: "rnk",
-				NEW_MEMBER_PAID: "nmp"
+				NEW_MEMBER_PAID: "nmp",
+				BIRTHDAY_PAID: "bd"
 
 			})
 
@@ -81,6 +82,7 @@ class monetary {
 			this.post.init();
 			this.rank_up.init();
 			this.new_member.init();
+			this.birthday.init();
 		}
 	}
 

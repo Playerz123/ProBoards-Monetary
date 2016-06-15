@@ -70,7 +70,8 @@ var monetary = function () {
 
 					MONEY: "m",
 					RANK: "rnk",
-					NEW_MEMBER_PAID: "nmp"
+					NEW_MEMBER_PAID: "nmp",
+					BIRTHDAY_PAID: "bd"
 
 				})
 
@@ -123,6 +124,7 @@ var monetary = function () {
 				this.post.init();
 				this.rank_up.init();
 				this.new_member.init();
+				this.birthday.init();
 			}
 		}
 	}, {
@@ -253,7 +255,7 @@ monetary.user_data = function () {
 		_classCallCheck(this, _class);
 
 		this._id = user_id;
-		this._DATA = Object.assign(Object.create(null), (_Object$assign = {}, _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.MONEY, parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.RANK, parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0), _Object$assign));
+		this._DATA = Object.assign(Object.create(null), (_Object$assign = {}, _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.MONEY, parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.RANK, parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.BIRTHDAY_PAID, parseInt(data[monetary.enums.DATA_KEYS.BIRTHDAY_PAID], 10) || 0), _Object$assign));
 	}
 
 	_createClass(_class, [{
@@ -913,6 +915,9 @@ monetary.api = function () {
 				},
 				new_member_paid: function new_member_paid() {
 					return !!user_data.get(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID);
+				},
+				birthday_paid: function birthday_paid() {
+					return user_data.get(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
 				}
 			};
 		}
@@ -945,6 +950,9 @@ monetary.api = function () {
 				},
 				new_member_paid: function new_member_paid() {
 					return user_data.set(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, 1);
+				},
+				birthday_paid: function birthday_paid() {
+					return user_data.set(monetary.enums.DATA_KEYS.BIRTHDAY_PAID, new Date().getFullYear());
 				}
 			};
 		}
@@ -1010,6 +1018,9 @@ monetary.api = function () {
 				},
 				new_member_paid: function new_member_paid() {
 					return user_data.clear(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID);
+				},
+				birthday_paid: function birthday_paid() {
+					return user_data.clear(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
 				}
 			};
 		}
@@ -1829,8 +1840,6 @@ monetary.new_member = function () {
 	_createClass(_class11, null, [{
 		key: "init",
 		value: function init() {
-			var _this8 = this;
-
 			this._amount = 0;
 			this._pay_old_members = false;
 			this._dialog_title = "New Registered Member Reward";
@@ -1841,9 +1850,7 @@ monetary.new_member = function () {
 			this.setup();
 
 			if (this._amount && !monetary.api.get(yootil.user.id()).new_member_paid()) {
-				monetary.api.queue.add(function (queue) {
-					_this8.pay_member(queue);
-				});
+				this.pay_member();
 			}
 		}
 	}, {
@@ -1866,9 +1873,7 @@ monetary.new_member = function () {
 	}, {
 		key: "pay_member",
 		value: function pay_member() {
-			var _this9 = this;
-
-			var queue = arguments.length <= 0 || arguments[0] === undefined ? null : arguments[0];
+			var _this8 = this;
 
 			var now = yootil.ts();
 			var registered_on = yootil.user.registered_on().unix_timestamp * 1000;
@@ -1880,96 +1885,101 @@ monetary.new_member = function () {
 			var _48hrs = 60 * 60 * 48 * 1000;
 
 			if (this._pay_old_members || diff <= _48hrs) {
-				(function () {
-					var dialog_msg = pb.text.nl2br(monetary.utils.full_money_str(_this9._amount, _this9._message));
-
-					dialog_msg = dialog_msg.replace("{MEMBER_NAME}", yootil.html_encode(yootil.user.name(), true));
-
-					var evt_data = Object.create(null);
-
-					evt_data.user_id = yootil.user.id();
-					evt_data.money = monetary.api.get(evt_data.user_id).money();
-					evt_data.old_member = diff > _48hrs ? true : false;
-					evt_data.difference = diff;
-					evt_data.message = dialog_msg;
-					evt_data.amount = _this9._amount;
-					evt_data.rejected = false;
-
-					var $dialog = pb.window.dialog("monetary-new-member-award-dialog", {
-
-						title: _this9._dialog_title,
-						modal: true,
-						height: _this9._dialog_height,
-						width: _this9._dialog_width,
-						resizable: false,
-						draggable: false,
-						html: dialog_msg,
-
-						open: function open() {
-							$(monetary.api.events).trigger("monetary.new_member.dialog_open", evt_data);
-						},
-
-						buttons: {
-
-							"Reject": function Reject() {
-								var _this10 = this;
-
-								pb.window.confirm("Are you sure you want to reject this reward?", function () {
-									evt_data.rejected = true;
-
-									$(monetary.api.events).trigger("monetary.new_member.before_save", evt_data);
-
-									monetary.api.set(evt_data.user_id).new_member_paid();
-
-									monetary.api.save(evt_data.user_id).then(function (status) {
-										$(monetary.api.events).trigger("monetary.new_member.after_save", evt_data);
-
-										monetary.api.sync(evt_data.user_id);
-									}).catch(function (status) {
-										console.warn("Monetary Error [New Member - R]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
-									});
-
-									$(_this10).dialog("close");
-
-									if (queue) {
-										queue.next();
-									}
-								});
-							},
-
-							"Accept": function Accept() {
-								evt_data.rejected = false;
-
-								$(monetary.api.events).trigger("monetary.new_member.before_save", evt_data);
-
-								monetary.api.set(evt_data.user_id).new_member_paid();
-								monetary.api.increase(evt_data.user_id).money(evt_data.amount);
-
-								monetary.api.save(evt_data.user_id).then(function (status) {
-									$(monetary.api.events).trigger("monetary.new_member.after_save", evt_data);
-
-									monetary.api.sync(evt_data.user_id);
-
-									// Manually ran sync handler updates so we can update
-									// possible pages we might be on.
-
-									monetary.sync_handler.update_all();
-								}).catch(function (status) {
-									console.warn("Monetary Error [New Member - A]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
-								});
-
-								$(this).dialog("close");
-
-								if (queue) {
-									queue.next();
-								}
-							}
-
-						}
-
-					});
-				})();
+				monetary.api.queue.add(function (queue) {
+					_this8.create_dialog(queue, diff, _48hrs);
+				});
 			}
+		}
+	}, {
+		key: "create_dialog",
+		value: function create_dialog(queue, diff, _48hrs) {
+			var dialog_msg = pb.text.nl2br(monetary.utils.full_money_str(this._amount, this._message));
+
+			dialog_msg = dialog_msg.replace("{MEMBER_NAME}", yootil.html_encode(yootil.user.name(), true));
+
+			var evt_data = Object.create(null);
+
+			evt_data.user_id = yootil.user.id();
+			evt_data.money = monetary.api.get(evt_data.user_id).money();
+			evt_data.old_member = diff > _48hrs ? true : false;
+			evt_data.difference = diff;
+			evt_data.message = dialog_msg;
+			evt_data.amount = this._amount;
+			evt_data.rejected = false;
+
+			var $dialog = pb.window.dialog("monetary-new-member-dialog", {
+
+				title: this._dialog_title,
+				modal: true,
+				height: this._dialog_height,
+				width: this._dialog_width,
+				resizable: false,
+				draggable: false,
+				html: dialog_msg,
+
+				open: function open() {
+					$(monetary.api.events).trigger("monetary.new_member.dialog_open", evt_data);
+				},
+
+				buttons: {
+
+					"Reject": function Reject() {
+						var _this9 = this;
+
+						pb.window.confirm("Are you sure you want to reject this reward?", function () {
+							evt_data.rejected = true;
+
+							$(monetary.api.events).trigger("monetary.new_member.before_save", evt_data);
+
+							monetary.api.set(evt_data.user_id).new_member_paid();
+
+							monetary.api.save(evt_data.user_id).then(function (status) {
+								$(monetary.api.events).trigger("monetary.new_member.after_save", evt_data);
+
+								monetary.api.sync(evt_data.user_id);
+							}).catch(function (status) {
+								console.warn("Monetary Error [New Member - R]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+							});
+
+							$(_this9).dialog("close");
+
+							if (queue) {
+								queue.next();
+							}
+						});
+					},
+
+					"Accept": function Accept() {
+						evt_data.rejected = false;
+
+						$(monetary.api.events).trigger("monetary.new_member.before_save", evt_data);
+
+						monetary.api.set(evt_data.user_id).new_member_paid();
+						monetary.api.increase(evt_data.user_id).money(evt_data.amount);
+
+						monetary.api.save(evt_data.user_id).then(function (status) {
+							$(monetary.api.events).trigger("monetary.new_member.after_save", evt_data);
+
+							monetary.api.sync(evt_data.user_id);
+
+							// Manually ran sync handler updates so we can update
+							// possible pages we might be on.
+
+							monetary.sync_handler.update_all();
+						}).catch(function (status) {
+							console.warn("Monetary Error [New Member - A]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+						});
+
+						$(this).dialog("close");
+
+						if (queue) {
+							queue.next();
+						}
+					}
+
+				}
+
+			});
 		}
 	}, {
 		key: "amount",
@@ -2004,6 +2014,187 @@ monetary.new_member = function () {
 	}]);
 
 	return _class11;
+}();
+
+monetary.birthday = function () {
+	function _class12() {
+		_classCallCheck(this, _class12);
+	}
+
+	_createClass(_class12, null, [{
+		key: "init",
+		value: function init() {
+			this._amount = 0;
+			this._dialog_title = "Happy Birthday";
+			this._dialog_width = 220;
+			this._dialog_height = 350;
+			this._message = "You have received {CURRENCY_SYMBOL}{MONEY} for your birthday.";
+
+			this.setup();
+
+			if (this._amount) {
+				this.pay_member();
+			}
+		}
+	}, {
+		key: "setup",
+		value: function setup() {
+			if (monetary.SETTINGS) {
+				var settings = monetary.SETTINGS;
+
+				this._amount = parseFloat(settings.birthday_amount);
+
+				// Dialog
+
+				this._dialog_title = settings.birthday_dialog_title;
+				this._dialog_width = parseFloat(settings.birthday_dialog_width) || this._dialog_width;
+				this._dialog_height = parseFloat(settings.birthday_dialog_height) || this._dialog_height;
+				this._message = settings.birthday_message;
+			}
+		}
+	}, {
+		key: "pay_member",
+		value: function pay_member() {
+			var _this10 = this;
+
+			var birthday = yootil.user.birthday();
+
+			if (birthday && birthday.day && birthday.month) {
+				var date = new Date();
+				var day = date.getDate();
+				var month = date.getMonth() + 1;
+				var year = date.getFullYear();
+				var year_paid = monetary.api.get(yootil.user.id()).birthday_paid();
+
+				birthday.day = day;
+				birthday.month = month;
+
+				if (!year_paid || year_paid < year) {
+					if (month == birthday.month && day == birthday.day) {
+						monetary.api.queue.add(function (queue) {
+							_this10.create_dialog(queue);
+						});
+					}
+				}
+			}
+		}
+	}, {
+		key: "create_dialog",
+		value: function create_dialog(queue) {
+			var dialog_msg = pb.text.nl2br(monetary.utils.full_money_str(this._amount, this._message));
+
+			dialog_msg = dialog_msg.replace("{MEMBER_NAME}", yootil.html_encode(yootil.user.name(), true));
+
+			var evt_data = Object.create(null);
+
+			evt_data.user_id = yootil.user.id();
+			evt_data.money = monetary.api.get(evt_data.user_id).money();
+			evt_data.message = dialog_msg;
+			evt_data.amount = this._amount;
+			evt_data.rejected = false;
+
+			var $dialog = pb.window.dialog("monetary-birthday-dialog", {
+
+				title: this._dialog_title,
+				modal: true,
+				height: this._dialog_height,
+				width: this._dialog_width,
+				resizable: false,
+				draggable: false,
+				html: dialog_msg,
+
+				open: function open() {
+					$(monetary.api.events).trigger("monetary.birthday.dialog_open", evt_data);
+				},
+
+				buttons: {
+
+					"Reject": function Reject() {
+						var _this11 = this;
+
+						pb.window.confirm("Are you sure you want to reject this reward?", function () {
+							evt_data.rejected = true;
+
+							$(monetary.api.events).trigger("monetary.birthday.before_save", evt_data);
+
+							monetary.api.set(evt_data.user_id).birthday_paid();
+
+							monetary.api.save(evt_data.user_id).then(function (status) {
+								$(monetary.api.events).trigger("monetary.birthday.after_save", evt_data);
+
+								monetary.api.sync(evt_data.user_id);
+							}).catch(function (status) {
+								console.warn("Monetary Error [Birthday - R]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+							});
+
+							$(_this11).dialog("close");
+
+							if (queue) {
+								queue.next();
+							}
+						});
+					},
+
+					"Accept": function Accept() {
+						evt_data.rejected = false;
+
+						$(monetary.api.events).trigger("monetary.birthday.before_save", evt_data);
+
+						monetary.api.set(evt_data.user_id).birthday_paid();
+						monetary.api.increase(evt_data.user_id).money(evt_data.amount);
+
+						monetary.api.save(evt_data.user_id).then(function (status) {
+							$(monetary.api.events).trigger("monetary.birthday.after_save", evt_data);
+
+							monetary.api.sync(evt_data.user_id);
+
+							// Manually ran sync handler updates so we can update
+							// possible pages we might be on.
+
+							monetary.sync_handler.update_all();
+						}).catch(function (status) {
+							console.warn("Monetary Error [Birthday - A]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
+						});
+
+						$(this).dialog("close");
+
+						if (queue) {
+							queue.next();
+						}
+					}
+
+				}
+
+			});
+		}
+	}, {
+		key: "amount",
+		get: function get() {
+			return this._amount;
+		}
+	}, {
+		key: "dialog_title",
+		get: function get() {
+			return this._dialog_title;
+		}
+	}, {
+		key: "dialog_width",
+		get: function get() {
+			return this._dialog_width;
+		}
+	}, {
+		key: "dialog_height",
+		get: function get() {
+			return this._dialog_height;
+		}
+	}, {
+		key: "message",
+		get: function get() {
+			return this._message;
+		}
+	}]);
+
+	return _class12;
 }();
 
 monetary.init();

@@ -6,7 +6,8 @@ monetary.user_data = class {
 
 			[monetary.enums.DATA_KEYS.MONEY]: parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0,
 			[monetary.enums.DATA_KEYS.RANK]: parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1,
-			[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID]: parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0
+			[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID]: parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0,
+			[monetary.enums.DATA_KEYS.BIRTHDAY_PAID]: parseInt(data[monetary.enums.DATA_KEYS.BIRTHDAY_PAID], 10) || 0,
 
 		});
 	}

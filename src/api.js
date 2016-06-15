@@ -51,6 +51,10 @@ monetary.api = class {
 
 			new_member_paid(){
 				return !! user_data.get(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID);
+			},
+			
+			birthday_paid(){
+				return user_data.get(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
 			}
 
 		};
@@ -79,6 +83,10 @@ monetary.api = class {
 
 			new_member_paid(){
 				return user_data.set(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, 1);
+			},
+
+			birthday_paid(){
+				return user_data.set(monetary.enums.DATA_KEYS.BIRTHDAY_PAID, (new Date().getFullYear()));
 			}
 
 		};
@@ -139,6 +147,10 @@ monetary.api = class {
 
 			new_member_paid(){
 				return user_data.clear(monetary.enums.DATA_KEYS.NEW_MEMBER_PAID);
+			},
+
+			birthday_paid(){
+				return user_data.clear(monetary.enums.DATA_KEYS.BIRTHDAY_PAID);
 			}
 
 		};
