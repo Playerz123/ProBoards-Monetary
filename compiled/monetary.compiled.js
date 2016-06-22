@@ -2405,7 +2405,7 @@ monetary.wages = function () {
 				}
 			}
 
-			// No amount or id?  Then look for highest member rule.
+			// No group amount?  Then look for highest member rule.
 
 			if (!highest_amount) {
 				var _iteratorNormalCompletion13 = true;

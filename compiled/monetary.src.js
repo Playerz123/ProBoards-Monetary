@@ -1868,7 +1868,7 @@ monetary.wages = class {
 			}
 		}
 		
-		// No amount or id?  Then look for highest member rule.
+		// No group amount?  Then look for highest member rule.
 
 		if(!highest_amount){
 			for(let [key, val] of this.settings.member_rules){
