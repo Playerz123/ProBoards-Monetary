@@ -758,8 +758,9 @@ monetary.importer = class {
 	}
 
 	static create_dialog(queue){
+		let user_id = yootil.user.id();
+		let old_data = monetary.api.get(user_id).old_data();
 		let dialog_msg = "Hello " + yootil.html_encode(yootil.user.name(), true) + ",<br /><br />";
-		let old_data = monetary.api.get(yootil.user.id()).old_data();
 
 		dialog_msg += "The Monetary plugin has been updated, but we need to move some important information over.  ";
 		dialog_msg += "Below is what we will be doing, all you need to do is click \"Import\".<br /><br />";
@@ -769,8 +770,6 @@ monetary.importer = class {
 		dialog_msg += " &nbsp; <strong>- Investments returned at the price you paid.</strong>";
 
 		dialog_msg += "<br /><br />If you choose to ignore this dialog, then you may lose out on money you previously earned.";
-
-		let user_id = yootil.user.id();
 
 		let $dialog = pb.window.dialog("monetary-import-dialog", {
 
@@ -803,7 +802,7 @@ monetary.importer = class {
 
 						for(let k in stock){
 							if(typeof stock[k].b != "undefined" && parseFloat(stock[k].b) > 0 && parseInt(stock[k].a, 10) > 0){
-								amount += parseFloat(stock[k].b) * (parseInt(stock[k].a, 10) || 0);
+								amount += parseFloat(stock[k].b) * (parseInt(stock[k].a, 10) || 1);
 							}
 						}
 
