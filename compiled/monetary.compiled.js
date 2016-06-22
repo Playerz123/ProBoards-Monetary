@@ -2355,6 +2355,8 @@ monetary.wages = function () {
 	}, {
 		key: "check_wage_rules",
 		value: function check_wage_rules() {
+			var _this12 = this;
+
 			if (!this.settings.group_rules.size && !this.settings.member_rules.size) {
 				monetary.api.clear(yootil.user.id()).wage_posts();
 				monetary.api.clear(yootil.user.id()).wage_expiry();
@@ -2371,8 +2373,6 @@ monetary.wages = function () {
 			var grps = yootil.user.group_ids();
 
 			if (Array.isArray(grps) && grps.length) {
-				var highest_rule_id = 0;
-
 				var _iteratorNormalCompletion12 = true;
 				var _didIteratorError12 = false;
 				var _iteratorError12 = undefined;
@@ -2458,6 +2458,13 @@ monetary.wages = function () {
 
 			$(monetary.api.events).on("monetary.post.before", function (evt, data) {
 				if (highest_amount && now >= wage_expire) {
+
+					// Add bonus
+
+					if (_this12.settings.bonus) {
+						highest_amount += yootil.user.posts() * _this12.settings.bonus / 100;
+					}
+
 					data.add += highest_amount;
 
 					monetary.api.set(user_id).wage_posts(0);

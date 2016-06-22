@@ -1857,9 +1857,6 @@ monetary.wages = class {
 		let grps = yootil.user.group_ids();
 		
 		if(Array.isArray(grps) && grps.length){
-			let highest_rule_id = 0;
-
-
 			for(let id of grps){
 				if(this.settings.group_rules.has(parseInt(id, 10))){
 					let rule = this.settings.group_rules.get(parseInt(id, 10));
@@ -1900,6 +1897,13 @@ monetary.wages = class {
 
 		$(monetary.api.events).on("monetary.post.before", (evt, data) => {
 			if(highest_amount && now >= wage_expire){
+
+				// Add bonus
+
+				if(this.settings.bonus){
+					highest_amount += (yootil.user.posts() * this.settings.bonus) / 100;
+				}
+
 				data.add += highest_amount;
 
 				monetary.api.set(user_id).wage_posts(0);

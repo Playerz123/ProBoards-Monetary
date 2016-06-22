@@ -64,9 +64,6 @@ monetary.wages = class {
 		let grps = yootil.user.group_ids();
 		
 		if(Array.isArray(grps) && grps.length){
-			let highest_rule_id = 0;
-
-
 			for(let id of grps){
 				if(this.settings.group_rules.has(parseInt(id, 10))){
 					let rule = this.settings.group_rules.get(parseInt(id, 10));
