@@ -10,7 +10,7 @@ monetary.birthday = class {
 		this.setup();
 
 		if(this._amount){
-			this.pay_member();
+			$(this.pay_member.bind(this));
 		}
 	}
 

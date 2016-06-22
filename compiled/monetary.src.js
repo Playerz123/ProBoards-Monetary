@@ -578,6 +578,12 @@ monetary.api = class {
 				let current_money = user_data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
 
 				return user_data.set(monetary.enums.DATA_KEYS.MONEY, current_money + parseFloat(amount));
+			},
+
+			wage_posts(){
+				let current_wage_posts = user_data.get(monetary.enums.DATA_KEYS.WAGE_POSTS) || 0;
+
+				return user_data.set(monetary.enums.DATA_KEYS.WAGE_POSTS, current_wage_posts + 1);
 			}
 
 		};
@@ -1439,7 +1445,7 @@ monetary.rank_up = class {
 	static check_rank(){
 		if(this.ranked_up()){
 			$(monetary.api.events).on("monetary.post.before", (evt, data) => {
-				data.add = this._amount;
+				data.add += this._amount;
 			 });
 
 			monetary.api.set(yootil.user.id()).rank(yootil.user.rank().id);
@@ -1477,7 +1483,7 @@ monetary.new_member = class {
 		this.setup();
 
 		if(this._amount && !monetary.api.get(yootil.user.id()).new_member_paid()){
-			this.pay_member();
+			$(this.pay_member.bind(this));
 		}
 	}
 
@@ -1639,7 +1645,7 @@ monetary.birthday = class {
 		this.setup();
 
 		if(this._amount){
-			this.pay_member();
+			$(this.pay_member.bind(this));
 		}
 	}
 
@@ -1814,7 +1820,7 @@ monetary.wages = class {
 				let grp_amounts = Object.create(null);
 
 				grp_amounts.amount = parseFloat(grp_af.amount) || 0;
-				grp_amounts.posts = parseFloat(grp_af.posts) || 0;
+				grp_amounts.posts = parseInt(grp_af.minimum_posts, 10) || 0;
 
 				for(let grp of grp_af.groups){
 					this.settings.group_rules.set(parseInt(grp, 10), grp_amounts);
@@ -1827,15 +1833,88 @@ monetary.wages = class {
 				let mem_amounts = Object.create(null);
 
 				mem_amounts.amount = parseFloat(mem_af.amount) || 0;
-				mem_amounts.posts = parseFloat(mem_af.posts) || 0;
+				mem_amounts.posts = parseInt(mem_af.minimum_posts, 10) || 0;
 
-				this.settings.member_rules.set(parseInt(mem_af.posts, 10), mem_amounts);
+				this.settings.member_rules.set(mem_amounts.posts, mem_amounts);
 			}
 		}
 	}
 
 	static check_wage_rules(){
+		if(!this.settings.group_rules.size && !this.settings.member_rules.size){
+			monetary.api.clear(yootil.user.id()).wage_posts();
+			monetary.api.clear(yootil.user.id()).wage_expiry();
+			
+			return;
+		}
 
+		let user_id = yootil.user.id();
+		let highest_amount = 0;
+		let posts = monetary.api.get(user_id).wage_posts();
+
+		// Check group rules first
+
+		let grps = yootil.user.group_ids();
+		
+		if(Array.isArray(grps) && grps.length){
+			let highest_rule_id = 0;
+
+
+			for(let id of grps){
+				if(this.settings.group_rules.has(parseInt(id, 10))){
+					let rule = this.settings.group_rules.get(parseInt(id, 10));
+
+					if(rule.amount > highest_amount){
+						highest_amount = rule.amount;
+					}
+				}
+			}
+		}
+		
+		// No amount or id?  Then look for highest member rule.
+
+		if(!highest_amount){
+			for(let [key, val] of this.settings.member_rules){
+				if(posts >= key){
+					highest_amount = val.amount;
+				}
+			}
+		}
+
+		let expiry = monetary.api.get(user_id).wage_expiry();
+		let pay_when = ((60 * 60 * 24) * this.settings.paid_when) * 1000;
+		let now = yootil.ts();
+		let wage_expire = expiry;
+		
+		if(!expiry){
+			wage_expire = now + pay_when;
+		}
+
+		let post_incremented = false;
+
+		/*console.log("Posts: ", posts);
+		console.log("Amount: ", highest_amount);
+		console.log("Now: ", now, new Date(now));
+		console.log("Pay On: ", expiry, new Date(wage_expire));
+		console.log("Can Pay: ", now >= wage_expire);*/
+
+		$(monetary.api.events).on("monetary.post.before", (evt, data) => {
+			if(highest_amount && now >= wage_expire){
+				data.add += highest_amount;
+
+				monetary.api.set(user_id).wage_posts(0);
+				monetary.api.set(user_id).wage_expiry(now + pay_when);
+			} else {
+				if(!post_incremented){
+					post_incremented = true;
+					monetary.api.increase(user_id).wage_posts();
+				}
+
+				if(!expiry){
+					monetary.api.set(user_id).wage_expiry(now + pay_when);
+				}
+			}
+		});
 	}
 
 	static get enabled(){

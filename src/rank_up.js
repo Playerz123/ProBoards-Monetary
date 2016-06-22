@@ -23,7 +23,7 @@ monetary.rank_up = class {
 	static check_rank(){
 		if(this.ranked_up()){
 			$(monetary.api.events).on("monetary.post.before", (evt, data) => {
-				data.add = this._amount;
+				data.add += this._amount;
 			 });
 
 			monetary.api.set(yootil.user.id()).rank(yootil.user.rank().id);

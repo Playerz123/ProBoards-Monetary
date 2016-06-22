@@ -418,8 +418,8 @@ monetary.settings = function () {
 					this._currency_symbol = settings.currency_symbol;
 					this._currency_symbol_image = settings.currency_symbol_image;
 					this._currency_separator = settings.currency_separator;
-					this._object_currency = !! ~ ~settings.object_based_currency;
-					this._currency_separator_space = !! ~ ~settings.currency_separator_space;
+					this._object_currency = !!~~settings.object_based_currency;
+					this._currency_separator_space = !!~~settings.currency_separator_space;
 					this._currency_delimiter = settings.currency_delimiter;
 
 					// Permissions
@@ -710,6 +710,11 @@ monetary.api = function () {
 					var current_money = user_data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
 
 					return user_data.set(monetary.enums.DATA_KEYS.MONEY, current_money + parseFloat(amount));
+				},
+				wage_posts: function wage_posts() {
+					var current_wage_posts = user_data.get(monetary.enums.DATA_KEYS.WAGE_POSTS) || 0;
+
+					return user_data.set(monetary.enums.DATA_KEYS.WAGE_POSTS, current_wage_posts + 1);
 				}
 			};
 		}
@@ -927,8 +932,8 @@ monetary.profile = function () {
 			if (monetary.SETTINGS) {
 				var settings = monetary.SETTINGS;
 
-				this.settings.show_money = !! ~ ~settings.profile_show_money;
-				this.settings.new_content_box = !! ~ ~settings.profile_new_cbox;
+				this.settings.show_money = !!~~settings.profile_show_money;
+				this.settings.new_content_box = !!~~settings.profile_new_cbox;
 			}
 		}
 	}, {
@@ -1286,7 +1291,7 @@ monetary.mini_profile = function () {
 			if (monetary.SETTINGS) {
 				var settings = monetary.SETTINGS;
 
-				this.settings.show_money = !! ~ ~settings.mini_profile_show_money;
+				this.settings.show_money = !!~~settings.mini_profile_show_money;
 			}
 		}
 	}, {
@@ -1830,7 +1835,7 @@ monetary.rank_up = function () {
 			if (monetary.SETTINGS) {
 				var settings = monetary.SETTINGS;
 
-				this._enabled = !! ~ ~settings.rank_up_enabled;
+				this._enabled = !!~~settings.rank_up_enabled;
 				this._amount = parseFloat(settings.rank_up_amount);
 			}
 		}
@@ -1841,7 +1846,7 @@ monetary.rank_up = function () {
 
 			if (this.ranked_up()) {
 				$(monetary.api.events).on("monetary.post.before", function (evt, data) {
-					data.add = _this7._amount;
+					data.add += _this7._amount;
 				});
 
 				monetary.api.set(yootil.user.id()).rank(yootil.user.rank().id);
@@ -1888,7 +1893,7 @@ monetary.new_member = function () {
 			this.setup();
 
 			if (this._amount && !monetary.api.get(yootil.user.id()).new_member_paid()) {
-				this.pay_member();
+				$(this.pay_member.bind(this));
 			}
 		}
 	}, {
@@ -1898,7 +1903,7 @@ monetary.new_member = function () {
 				var settings = monetary.SETTINGS;
 
 				this._amount = parseFloat(settings.new_user_amount);
-				this._pay_old_members = !! ~ ~settings.pay_old_users;
+				this._pay_old_members = !!~~settings.pay_old_users;
 
 				// Dialog
 
@@ -2070,7 +2075,7 @@ monetary.birthday = function () {
 			this.setup();
 
 			if (this._amount) {
-				this.pay_member();
+				$(this.pay_member.bind(this));
 			}
 		}
 	}, {
@@ -2255,7 +2260,7 @@ monetary.wages = function () {
 			if (monetary.SETTINGS) {
 				var settings = monetary.SETTINGS;
 
-				this.settings.enabled = !! ~ ~settings.wages_enabled;
+				this.settings.enabled = !!~~settings.wages_enabled;
 				this.settings.paid_when = Math.max(1, parseInt(settings.wages_paid_when, 10)) || 1;
 				this.settings.bonus = parseFloat(settings.wages_bonus) || 0;
 
@@ -2272,7 +2277,7 @@ monetary.wages = function () {
 						var grp_amounts = Object.create(null);
 
 						grp_amounts.amount = parseFloat(grp_af.amount) || 0;
-						grp_amounts.posts = parseFloat(grp_af.posts) || 0;
+						grp_amounts.posts = parseInt(grp_af.minimum_posts, 10) || 0;
 
 						var _iteratorNormalCompletion11 = true;
 						var _didIteratorError11 = false;
@@ -2327,9 +2332,9 @@ monetary.wages = function () {
 						var mem_amounts = Object.create(null);
 
 						mem_amounts.amount = parseFloat(mem_af.amount) || 0;
-						mem_amounts.posts = parseFloat(mem_af.posts) || 0;
+						mem_amounts.posts = parseInt(mem_af.minimum_posts, 10) || 0;
 
-						this.settings.member_rules.set(parseInt(mem_af.posts, 10), mem_amounts);
+						this.settings.member_rules.set(mem_amounts.posts, mem_amounts);
 					}
 				} catch (err) {
 					_didIteratorError10 = true;
@@ -2349,7 +2354,126 @@ monetary.wages = function () {
 		}
 	}, {
 		key: "check_wage_rules",
-		value: function check_wage_rules() {}
+		value: function check_wage_rules() {
+			if (!this.settings.group_rules.size && !this.settings.member_rules.size) {
+				monetary.api.clear(yootil.user.id()).wage_posts();
+				monetary.api.clear(yootil.user.id()).wage_expiry();
+
+				return;
+			}
+
+			var user_id = yootil.user.id();
+			var highest_amount = 0;
+			var posts = monetary.api.get(user_id).wage_posts();
+
+			// Check group rules first
+
+			var grps = yootil.user.group_ids();
+
+			if (Array.isArray(grps) && grps.length) {
+				var highest_rule_id = 0;
+
+				var _iteratorNormalCompletion12 = true;
+				var _didIteratorError12 = false;
+				var _iteratorError12 = undefined;
+
+				try {
+					for (var _iterator12 = grps[Symbol.iterator](), _step12; !(_iteratorNormalCompletion12 = (_step12 = _iterator12.next()).done); _iteratorNormalCompletion12 = true) {
+						var id = _step12.value;
+
+						if (this.settings.group_rules.has(parseInt(id, 10))) {
+							var rule = this.settings.group_rules.get(parseInt(id, 10));
+
+							if (rule.amount > highest_amount) {
+								highest_amount = rule.amount;
+							}
+						}
+					}
+				} catch (err) {
+					_didIteratorError12 = true;
+					_iteratorError12 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion12 && _iterator12.return) {
+							_iterator12.return();
+						}
+					} finally {
+						if (_didIteratorError12) {
+							throw _iteratorError12;
+						}
+					}
+				}
+			}
+
+			// No amount or id?  Then look for highest member rule.
+
+			if (!highest_amount) {
+				var _iteratorNormalCompletion13 = true;
+				var _didIteratorError13 = false;
+				var _iteratorError13 = undefined;
+
+				try {
+					for (var _iterator13 = this.settings.member_rules[Symbol.iterator](), _step13; !(_iteratorNormalCompletion13 = (_step13 = _iterator13.next()).done); _iteratorNormalCompletion13 = true) {
+						var _step13$value = _slicedToArray(_step13.value, 2);
+
+						var key = _step13$value[0];
+						var val = _step13$value[1];
+
+						if (posts >= key) {
+							highest_amount = val.amount;
+						}
+					}
+				} catch (err) {
+					_didIteratorError13 = true;
+					_iteratorError13 = err;
+				} finally {
+					try {
+						if (!_iteratorNormalCompletion13 && _iterator13.return) {
+							_iterator13.return();
+						}
+					} finally {
+						if (_didIteratorError13) {
+							throw _iteratorError13;
+						}
+					}
+				}
+			}
+
+			var expiry = monetary.api.get(user_id).wage_expiry();
+			var pay_when = 60 * 60 * 24 * this.settings.paid_when * 1000;
+			var now = yootil.ts();
+			var wage_expire = expiry;
+
+			if (!expiry) {
+				wage_expire = now + pay_when;
+			}
+
+			var post_incremented = false;
+
+			/*console.log("Posts: ", posts);
+   console.log("Amount: ", highest_amount);
+   console.log("Now: ", now, new Date(now));
+   console.log("Pay On: ", expiry, new Date(wage_expire));
+   console.log("Can Pay: ", now >= wage_expire);*/
+
+			$(monetary.api.events).on("monetary.post.before", function (evt, data) {
+				if (highest_amount && now >= wage_expire) {
+					data.add += highest_amount;
+
+					monetary.api.set(user_id).wage_posts(0);
+					monetary.api.set(user_id).wage_expiry(now + pay_when);
+				} else {
+					if (!post_incremented) {
+						post_incremented = true;
+						monetary.api.increase(user_id).wage_posts();
+					}
+
+					if (!expiry) {
+						monetary.api.set(user_id).wage_expiry(now + pay_when);
+					}
+				}
+			});
+		}
 	}, {
 		key: "enabled",
 		get: function get() {

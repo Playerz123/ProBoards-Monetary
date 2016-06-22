@@ -11,7 +11,7 @@ monetary.new_member = class {
 		this.setup();
 
 		if(this._amount && !monetary.api.get(yootil.user.id()).new_member_paid()){
-			this.pay_member();
+			$(this.pay_member.bind(this));
 		}
 	}
 

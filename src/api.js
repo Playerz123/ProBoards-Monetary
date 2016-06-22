@@ -121,6 +121,12 @@ monetary.api = class {
 				let current_money = user_data.get(monetary.enums.DATA_KEYS.MONEY) || 0;
 
 				return user_data.set(monetary.enums.DATA_KEYS.MONEY, current_money + parseFloat(amount));
+			},
+
+			wage_posts(){
+				let current_wage_posts = user_data.get(monetary.enums.DATA_KEYS.WAGE_POSTS) || 0;
+
+				return user_data.set(monetary.enums.DATA_KEYS.WAGE_POSTS, current_wage_posts + 1);
 			}
 
 		};
