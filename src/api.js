@@ -45,6 +45,10 @@ monetary.api = class {
 				return user_data.get("data");
 			},
 
+			old_data(){
+				return user_data.get("old_data");
+			},
+
 			rank(){
 				return user_data.get(monetary.enums.DATA_KEYS.RANK);
 			},
@@ -83,6 +87,10 @@ monetary.api = class {
 
 			data(value = {}){
 				return user_data.set("data", value);
+			},
+
+			old_data(value = {}){
+				return user_data.set("old_data", value);
 			},
 
 			rank(rank = 0){

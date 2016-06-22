@@ -49,6 +49,7 @@ class monetary {
 
 		this.settings.init();
 		this.setup_data();
+		this.importer.init();
 
 		// Extension pre inits
 		

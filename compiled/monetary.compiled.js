@@ -26,6 +26,8 @@
 
 "use strict";
 
+var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol ? "symbol" : typeof obj; };
+
 var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -90,6 +92,7 @@ var monetary = function () {
 
 			this.settings.init();
 			this.setup_data();
+			this.importer.init();
 
 			// Extension pre inits
 
@@ -252,6 +255,7 @@ monetary.user_data = function () {
 		_classCallCheck(this, _class);
 
 		this._id = user_id;
+		this._data_obj = data;
 		this._DATA = Object.assign(Object.create(null), (_Object$assign = {}, _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.MONEY, parseFloat(data[monetary.enums.DATA_KEYS.MONEY]) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.RANK, parseInt(data[monetary.enums.DATA_KEYS.RANK], 10) || 1), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.NEW_MEMBER_PAID, parseInt(data[monetary.enums.DATA_KEYS.NEW_MEMBER_PAID], 10) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.BIRTHDAY_PAID, parseInt(data[monetary.enums.DATA_KEYS.BIRTHDAY_PAID], 10) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.WAGE_POSTS, parseInt(data[monetary.enums.DATA_KEYS.WAGE_POSTS], 10) || 0), _defineProperty(_Object$assign, monetary.enums.DATA_KEYS.WAGE_EXPIRY, parseInt(data[monetary.enums.DATA_KEYS.WAGE_EXPIRY], 10) || 0), _Object$assign));
 	}
 
@@ -271,6 +275,8 @@ monetary.user_data = function () {
 				return this._DATA[key];
 			} else if (key == "data") {
 				return this._DATA;
+			} else if (key == "old_data") {
+				return this._data_obj;
 			}
 
 			return null;
@@ -287,6 +293,10 @@ monetary.user_data = function () {
 				return true;
 			} else if (key == "data") {
 				this._DATA = value;
+
+				return true;
+			} else if (key == "old_data") {
+				this._data_obj = value;
 
 				return true;
 			}
@@ -630,6 +640,9 @@ monetary.api = function () {
 				data: function data() {
 					return user_data.get("data");
 				},
+				old_data: function old_data() {
+					return user_data.get("old_data");
+				},
 				rank: function rank() {
 					return user_data.get(monetary.enums.DATA_KEYS.RANK);
 				},
@@ -668,6 +681,11 @@ monetary.api = function () {
 					var value = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
 
 					return user_data.set("data", value);
+				},
+				old_data: function old_data() {
+					var value = arguments.length <= 0 || arguments[0] === undefined ? {} : arguments[0];
+
+					return user_data.set("old_data", value);
 				},
 				rank: function rank() {
 					var _rank = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
@@ -843,12 +861,148 @@ monetary.api = function () {
 	return _class5;
 }();
 
-monetary.sync_handler = function () {
+// @TODO: Test importer
+
+monetary.importer = function () {
 	function _class6() {
 		_classCallCheck(this, _class6);
 	}
 
 	_createClass(_class6, null, [{
+		key: "init",
+		value: function init() {
+			if (!yootil.user.logged_in()) {
+				return;
+			}
+
+			if (this.has_old_keys()) {
+				$(this.warn_user.bind(this));
+			}
+		}
+
+		// Check for any old key.
+		// We don't do any updating here.
+
+	}, {
+		key: "has_old_keys",
+		value: function has_old_keys() {
+			var old_data = monetary.api.get(yootil.user.id()).old_data();
+
+			if (typeof old_data.b != "undefined" && parseFloat(old_data.b) > 0) {
+				return true;
+			} else if (typeof old_data.or != "undefined" && parseInt(old_data.or, 10) > 0) {
+				return true;
+			} else if (typeof old_data.s != "undefined" && _typeof(old_data.s) == "object") {
+				var stock = old_data.s;
+
+				for (var k in stock) {
+					if (typeof stock[k].b != "undefined" && parseFloat(stock[k].b) > 0 && parseInt(stock[k].a, 10) > 0) {
+						return true;
+					}
+				}
+			}
+
+			return false;
+		}
+	}, {
+		key: "warn_user",
+		value: function warn_user() {
+			var _this2 = this;
+
+			monetary.api.queue.add(function (queue) {
+				_this2.create_dialog(queue);
+			});
+		}
+	}, {
+		key: "create_dialog",
+		value: function create_dialog(queue) {
+			var dialog_msg = "Hello " + yootil.html_encode(yootil.user.name(), true) + ",<br /><br />";
+			var old_data = monetary.api.get(yootil.user.id()).old_data();
+
+			dialog_msg += "The Monetary plugin has been updated, but we need to move some important information over.  ";
+			dialog_msg += "Below is what we will be doing, all you need to do is click \"Import\".<br /><br />";
+
+			dialog_msg += " &nbsp; <strong>- Bank account emptied and put into your pocket.</strong><br />";
+			dialog_msg += " &nbsp; <strong>- Old rank moved to a new home.</strong><br />";
+			dialog_msg += " &nbsp; <strong>- Investments returned at the price you paid.</strong>";
+
+			dialog_msg += "<br /><br />If you choose to ignore this dialog, then you may lose out on money you previously earned.";
+
+			var user_id = yootil.user.id();
+
+			var $dialog = pb.window.dialog("monetary-import-dialog", {
+
+				title: "Monetary Importer",
+				modal: true,
+				height: 340,
+				width: 550,
+				resizable: false,
+				draggable: false,
+				html: dialog_msg,
+
+				buttons: {
+
+					"Import": function Import() {
+						var old_data = monetary.api.get(user_id).old_data();
+
+						if (typeof old_data.b != "undefined" && parseFloat(old_data.b) > 0) {
+							monetary.api.increase(user_id).money(parseFloat(old_data.b));
+							delete old_data.b;
+						}
+
+						if (typeof old_data.or != "undefined" && parseInt(old_data.or, 10) > 0) {
+							monetary.api.set(user_id).rank(parseInt(old_data.or, 10) || 0);
+							delete old_data.or;
+						}
+
+						if (typeof old_data.s != "undefined" && _typeof(old_data.s) == "object") {
+							var stock = old_data.s;
+							var amount = 0;
+
+							for (var k in stock) {
+								if (typeof stock[k].b != "undefined" && parseFloat(stock[k].b) > 0 && parseInt(stock[k].a, 10) > 0) {
+									amount += parseFloat(stock[k].b) * (parseInt(stock[k].a, 10) || 0);
+								}
+							}
+
+							if (amount) {
+								monetary.api.increase(user_id).money(amount);
+							}
+
+							delete old_data.s;
+						}
+
+						monetary.api.set(user_id).old_data(old_data);
+
+						monetary.api.save(user_id).then(function (status) {
+							monetary.api.sync(user_id);
+							monetary.sync_handler.update_all();
+						}).catch(function (status) {
+							console.warn("Monetary Error [Importer]", "Could not save data (ID#" + user_id + ").<br /><br />" + yootil.html_encode(status.message));
+						});
+
+						$(this).dialog("close");
+
+						if (queue) {
+							queue.next();
+						}
+					}
+
+				}
+
+			});
+		}
+	}]);
+
+	return _class6;
+}();
+
+monetary.sync_handler = function () {
+	function _class7() {
+		_classCallCheck(this, _class7);
+	}
+
+	_createClass(_class7, null, [{
 		key: "change",
 		value: function change(new_data, old_data) {
 			this._new_data = new_data;
@@ -896,7 +1050,7 @@ monetary.sync_handler = function () {
 		}
 	}]);
 
-	return _class6;
+	return _class7;
 }();
 
 /**
@@ -904,11 +1058,11 @@ monetary.sync_handler = function () {
  */
 
 monetary.profile = function () {
-	function _class7() {
-		_classCallCheck(this, _class7);
+	function _class8() {
+		_classCallCheck(this, _class8);
 	}
 
-	_createClass(_class7, null, [{
+	_createClass(_class8, null, [{
 		key: "init",
 		value: function init() {
 			this.settings = Object.create(null);
@@ -1002,7 +1156,7 @@ monetary.profile = function () {
 	}, {
 		key: "add_edit_ability",
 		value: function add_edit_ability() {
-			var _this2 = this;
+			var _this3 = this;
 
 			if (!this._$money_elem.length) {
 				return;
@@ -1014,17 +1168,17 @@ monetary.profile = function () {
 					var $edit_image = $("<img class='monetary-edit-icon' src='" + monetary.settings.images.edit + "' alt='Edit' title='Edit' />");
 
 					$edit_image.on("click", function () {
-						return _this2.edit_dialog(cur_profile);
+						return _this3.edit_dialog(cur_profile);
 					});
 
-					_this2._$money_elem.append($edit_image);
+					_this3._$money_elem.append($edit_image);
 				})();
 			}
 		}
 	}, {
 		key: "edit_dialog",
 		value: function edit_dialog() {
-			var _this3 = this;
+			var _this4 = this;
 
 			var profile_id = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
 
@@ -1049,16 +1203,16 @@ monetary.profile = function () {
 			var $dialog_html = $("<span />").html(dialog_html);
 
 			$dialog_html.find("button#monetary-set-money").on("click", function () {
-				return _this3.set_money(profile_id);
+				return _this4.set_money(profile_id);
 			});
 			$dialog_html.find("button#monetary-reset-money").on("click", function () {
-				return _this3.reset_money(profile_id);
+				return _this4.reset_money(profile_id);
 			});
 			$dialog_html.find("button#monetary-add-money").on("click", function () {
-				return _this3.add_remove_money(profile_id);
+				return _this4.add_remove_money(profile_id);
 			});
 			$dialog_html.find("button#monetary-remove-money").on("click", function () {
-				return _this3.add_remove_money(profile_id, true);
+				return _this4.add_remove_money(profile_id, true);
 			});
 
 			var $dialog = pb.window.dialog("monetary-edit-money-dialog", {
@@ -1168,7 +1322,7 @@ monetary.profile = function () {
 	}, {
 		key: "save_and_update",
 		value: function save_and_update() {
-			var _this4 = this;
+			var _this5 = this;
 
 			var profile_id = arguments.length <= 0 || arguments[0] === undefined ? 0 : arguments[0];
 
@@ -1179,7 +1333,7 @@ monetary.profile = function () {
 			$(monetary.api.events).trigger("monetary.profile.edit_money_before_save", evt_data);
 
 			monetary.api.save(profile_id).then(function (status) {
-				_this4.update(profile_id);
+				_this5.update(profile_id);
 
 				var evt_data = Object.create(null);
 
@@ -1255,15 +1409,15 @@ monetary.profile = function () {
 		}
 	}]);
 
-	return _class7;
+	return _class8;
 }();
 
 monetary.mini_profile = function () {
-	function _class8() {
-		_classCallCheck(this, _class8);
+	function _class9() {
+		_classCallCheck(this, _class9);
 	}
 
-	_createClass(_class8, null, [{
+	_createClass(_class9, null, [{
 		key: "init",
 		value: function init() {
 			this.settings = Object.create(null);
@@ -1303,7 +1457,7 @@ monetary.mini_profile = function () {
 	}, {
 		key: "add_money_to_mini_profiles",
 		value: function add_money_to_mini_profiles() {
-			var _this5 = this;
+			var _this6 = this;
 
 			var $mini_profiles = yootil.get.mini_profiles();
 
@@ -1347,8 +1501,8 @@ monetary.mini_profile = function () {
 					if ($elem.length) {
 						evt_data.template = $elem.text();
 
-						_this5._template = evt_data.template;
-						_this5._using_custom = true;
+						_this6._template = evt_data.template;
+						_this6._using_custom = true;
 					} else {
 						using_info = true;
 						$elem = $("<div class='monetary-user-money'></div>");
@@ -1417,15 +1571,15 @@ monetary.mini_profile = function () {
 		}
 	}]);
 
-	return _class8;
+	return _class9;
 }();
 
 monetary.post = function () {
-	function _class9() {
-		_classCallCheck(this, _class9);
+	function _class10() {
+		_classCallCheck(this, _class10);
 	}
 
-	_createClass(_class9, null, [{
+	_createClass(_class10, null, [{
 		key: "init",
 		value: function init() {
 			this.settings = Object.create(null);
@@ -1630,7 +1784,7 @@ monetary.post = function () {
 	}, {
 		key: "ready",
 		value: function ready() {
-			var _this6 = this;
+			var _this7 = this;
 
 			this._new_thread = yootil.location.posting_thread() ? true : false;
 			this._new_post = !this._new_thread ? true : false;
@@ -1645,9 +1799,9 @@ monetary.post = function () {
 				$the_form.on("submit", function () {
 					var poll_input = $the_form.find("input[name=has_poll]");
 
-					_this6._poll = poll_input.length && poll_input.val() == 1 ? true : false;
-					_this6._submitted = true;
-					_this6.set_on();
+					_this7._poll = poll_input.length && poll_input.val() == 1 ? true : false;
+					_this7._submitted = true;
+					_this7.set_on();
 				});
 			} else {
 				console.warn("Monetary Post: Could not find form.");
@@ -1809,15 +1963,15 @@ monetary.post = function () {
 		}
 	}]);
 
-	return _class9;
+	return _class10;
 }();
 
 monetary.rank_up = function () {
-	function _class10() {
-		_classCallCheck(this, _class10);
+	function _class11() {
+		_classCallCheck(this, _class11);
 	}
 
-	_createClass(_class10, null, [{
+	_createClass(_class11, null, [{
 		key: "init",
 		value: function init() {
 			this._enabled = true;
@@ -1842,11 +1996,11 @@ monetary.rank_up = function () {
 	}, {
 		key: "check_rank",
 		value: function check_rank() {
-			var _this7 = this;
+			var _this8 = this;
 
 			if (this.ranked_up()) {
 				$(monetary.api.events).on("monetary.post.before", function (evt, data) {
-					data.add += _this7._amount;
+					data.add += _this8._amount;
 				});
 
 				monetary.api.set(yootil.user.id()).rank(yootil.user.rank().id);
@@ -1872,15 +2026,15 @@ monetary.rank_up = function () {
 		}
 	}]);
 
-	return _class10;
+	return _class11;
 }();
 
 monetary.new_member = function () {
-	function _class11() {
-		_classCallCheck(this, _class11);
+	function _class12() {
+		_classCallCheck(this, _class12);
 	}
 
-	_createClass(_class11, null, [{
+	_createClass(_class12, null, [{
 		key: "init",
 		value: function init() {
 			this._amount = 0;
@@ -1916,7 +2070,7 @@ monetary.new_member = function () {
 	}, {
 		key: "pay_member",
 		value: function pay_member() {
-			var _this8 = this;
+			var _this9 = this;
 
 			var now = yootil.ts();
 			var registered_on = yootil.user.registered_on().unix_timestamp * 1000;
@@ -1929,7 +2083,7 @@ monetary.new_member = function () {
 
 			if (this._pay_old_members || diff <= _48hrs) {
 				monetary.api.queue.add(function (queue) {
-					_this8.create_dialog(queue, diff, _48hrs);
+					_this9.create_dialog(queue, diff, _48hrs);
 				});
 			}
 		}
@@ -1966,7 +2120,7 @@ monetary.new_member = function () {
 				buttons: {
 
 					"Reject": function Reject() {
-						var _this9 = this;
+						var _this10 = this;
 
 						pb.window.confirm("Are you sure you want to reject this reward?", function () {
 							evt_data.rejected = true;
@@ -1983,7 +2137,7 @@ monetary.new_member = function () {
 								console.warn("Monetary Error [New Member - R]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
 							});
 
-							$(_this9).dialog("close");
+							$(_this10).dialog("close");
 
 							if (queue) {
 								queue.next();
@@ -2055,15 +2209,15 @@ monetary.new_member = function () {
 		}
 	}]);
 
-	return _class11;
+	return _class12;
 }();
 
 monetary.birthday = function () {
-	function _class12() {
-		_classCallCheck(this, _class12);
+	function _class13() {
+		_classCallCheck(this, _class13);
 	}
 
-	_createClass(_class12, null, [{
+	_createClass(_class13, null, [{
 		key: "init",
 		value: function init() {
 			this._amount = 0;
@@ -2097,7 +2251,7 @@ monetary.birthday = function () {
 	}, {
 		key: "pay_member",
 		value: function pay_member() {
-			var _this10 = this;
+			var _this11 = this;
 
 			var birthday = yootil.user.birthday();
 
@@ -2111,7 +2265,7 @@ monetary.birthday = function () {
 				if (!year_paid || year_paid < year) {
 					if (month == birthday.month && day == birthday.day) {
 						monetary.api.queue.add(function (queue) {
-							_this10.create_dialog(queue);
+							_this11.create_dialog(queue);
 						});
 					}
 				}
@@ -2148,7 +2302,7 @@ monetary.birthday = function () {
 				buttons: {
 
 					"Reject": function Reject() {
-						var _this11 = this;
+						var _this12 = this;
 
 						pb.window.confirm("Are you sure you want to reject this reward?", function () {
 							evt_data.rejected = true;
@@ -2165,7 +2319,7 @@ monetary.birthday = function () {
 								console.warn("Monetary Error [Birthday - R]", "Could not save data (ID#" + evt_data.user_id + ").<br /><br />" + yootil.html_encode(status.message));
 							});
 
-							$(_this11).dialog("close");
+							$(_this12).dialog("close");
 
 							if (queue) {
 								queue.next();
@@ -2232,15 +2386,15 @@ monetary.birthday = function () {
 		}
 	}]);
 
-	return _class12;
+	return _class13;
 }();
 
 monetary.wages = function () {
-	function _class13() {
-		_classCallCheck(this, _class13);
+	function _class14() {
+		_classCallCheck(this, _class14);
 	}
 
-	_createClass(_class13, null, [{
+	_createClass(_class14, null, [{
 		key: "init",
 		value: function init() {
 			this.settings = Object.create(null);
@@ -2355,7 +2509,7 @@ monetary.wages = function () {
 	}, {
 		key: "check_wage_rules",
 		value: function check_wage_rules() {
-			var _this12 = this;
+			var _this13 = this;
 
 			if (!this.settings.group_rules.size && !this.settings.member_rules.size) {
 				monetary.api.clear(yootil.user.id()).wage_posts();
@@ -2461,8 +2615,8 @@ monetary.wages = function () {
 
 					// Add bonus
 
-					if (_this12.settings.bonus) {
-						highest_amount += yootil.user.posts() * _this12.settings.bonus / 100;
+					if (_this13.settings.bonus) {
+						highest_amount += yootil.user.posts() * _this13.settings.bonus / 100;
 					}
 
 					data.add += highest_amount;
@@ -2508,7 +2662,7 @@ monetary.wages = function () {
 		}
 	}]);
 
-	return _class13;
+	return _class14;
 }();
 
 monetary.init();
