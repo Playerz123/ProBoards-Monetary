@@ -107,6 +107,13 @@ monetary.wages = class {
 
 		$(monetary.api.events).on("monetary.post.before", (evt, data) => {
 			if(highest_amount && now >= wage_expire){
+
+				// Add bonus
+
+				if(this.settings.bonus){
+					highest_amount += (yootil.user.posts() * this.settings.bonus) / 100;
+				}
+
 				data.add += highest_amount;
 
 				monetary.api.set(user_id).wage_posts(0);
