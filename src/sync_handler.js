@@ -39,4 +39,4 @@ monetary.sync_handler = class {
 		this.update_mini_profile();
 	}
 
-}
+};

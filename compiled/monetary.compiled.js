@@ -245,6 +245,8 @@ var monetary = function () {
 	return monetary;
 }();
 
+;
+
 monetary.user_data = function () {
 	function _class() {
 		var _Object$assign;
@@ -1087,6 +1089,7 @@ monetary.profile = function () {
 
 				this.settings.show_money = !!~~settings.profile_show_money;
 				this.settings.new_content_box = !!~~settings.profile_new_cbox;
+				this.settings.edit_img = settings.edit_img && settings.edit_img.length ? settings.edit_img : monetary.settings.images.edit;
 			}
 		}
 	}, {
@@ -1164,7 +1167,7 @@ monetary.profile = function () {
 			if (monetary.permissions.can_edit_money()) {
 				(function () {
 					var cur_profile = yootil.page.member.id();
-					var $edit_image = $("<img class='monetary-edit-icon' src='" + monetary.settings.images.edit + "' alt='Edit' title='Edit' />");
+					var $edit_image = $("<img class='monetary-edit-icon' src='" + _this3.settings.edit_img + "' alt='Edit' title='Edit' />");
 
 					$edit_image.on("click", function () {
 						return _this3.edit_dialog(cur_profile);

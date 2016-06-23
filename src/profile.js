@@ -28,6 +28,7 @@ monetary.profile = class {
 
 			this.settings.show_money = !! ~~ settings.profile_show_money;
 			this.settings.new_content_box = !! ~~ settings.profile_new_cbox;
+			this.settings.edit_img = (settings.edit_img && settings.edit_img.length)? settings.edit_img : monetary.settings.images.edit;
 		}	
 	}
 
@@ -98,7 +99,7 @@ monetary.profile = class {
 
 		if(monetary.permissions.can_edit_money()){
 			let cur_profile = yootil.page.member.id();
-			let $edit_image = $("<img class='monetary-edit-icon' src='" + monetary.settings.images.edit + "' alt='Edit' title='Edit' />");
+			let $edit_image = $("<img class='monetary-edit-icon' src='" + this.settings.edit_img + "' alt='Edit' title='Edit' />");
 
 			$edit_image.on("click", () => this.edit_dialog(cur_profile));
 
