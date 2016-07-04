@@ -150,7 +150,7 @@ monetary.post = class {
 					this._money_added = money_to_add;
 
 					monetary.api.increase(evt_data.user_id).money(money_to_add);
-					yootil.key.set_on(monetary.enums.PLUGIN_KEY, monetary.api.get(evt_data.user_id).data(), evt_data.user_id, this._hook);
+					yootil.key(monetary.enums.PLUGIN_KEY).on(this._hook, monetary.api.get(evt_data.user_id).data(), evt_data.user_id);
 
 					evt_data_2.money_after = monetary.api.get(evt_data.user_id).money();
 

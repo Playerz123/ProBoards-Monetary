@@ -212,7 +212,7 @@ monetary.user_data = class {
 	save(){
 		$(monetary.api.events).trigger("monetary.user_data.before_key_saved", this._DATA);
 		
-		return yootil.key.set(monetary.enums.PLUGIN_KEY, this._DATA, this._id);
+		return yootil.key(monetary.enums.PLUGIN_KEY).set(this._DATA, this._id);
 	}
 
 	get(key = ""){
@@ -877,7 +877,7 @@ monetary.sync_handler = class {
 		this.update_mini_profile();
 	}
 
-}
+};
 
 /**
  * Will handle anything on the profile page
@@ -1487,7 +1487,7 @@ monetary.post = class {
 					this._money_added = money_to_add;
 
 					monetary.api.increase(evt_data.user_id).money(money_to_add);
-					yootil.key.set_on(monetary.enums.PLUGIN_KEY, monetary.api.get(evt_data.user_id).data(), evt_data.user_id, this._hook);
+					yootil.key(monetary.enums.PLUGIN_KEY).on(this._hook, monetary.api.get(evt_data.user_id).data(), evt_data.user_id);
 
 					evt_data_2.money_after = monetary.api.get(evt_data.user_id).money();
 
